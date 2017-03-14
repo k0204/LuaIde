@@ -883,7 +883,6 @@ debugger_setBreak = function(data)
 					lines[v] = true
 				end
 				for i,v in ipairs(fileNames) do
-				
 					breakInfos[v] = lines ;
 				end
 			else 
@@ -1011,7 +1010,7 @@ end
 local function getSource(source)
 	
 	if(LuaDebugger.pathCachePaths[source]) then
-	
+		-- print("cunzai",LuaDebugger.pathCachePaths[source])
 		return LuaDebugger.pathCachePaths[source]
 	end
 	local file = source
@@ -1028,18 +1027,7 @@ local function getSource(source)
 		file = file:sub(2);
 
 	end
-	local index = file:find(".lua")
 	
-	if not index then
-		file = file..".lua"
-	else
-		
-		local flength =string.len(file)
-		if(index ~= flength-3) then
-			file = file..".lua"
-		end
-	end
-
 	local tempFile = string.lower(file)
 	local paths = LuaDebugger.clientPaths
 	if(tempFile:find('-')) then
@@ -1049,7 +1037,6 @@ local function getSource(source)
 	if(paths) then
 
 		for i,clientPath in ipairs(paths) do
-			print(clientPath)
 			if tempFile:find(clientPath) then
 				
 				file = file:sub(string.len(clientPath)+1)
@@ -1060,7 +1047,7 @@ local function getSource(source)
 	end
 	
 	LuaDebugger.pathCachePaths[source] = file
-	
+	print(file)
 	return file ;
 end
 
@@ -1442,6 +1429,7 @@ end
 			if(source == "=[C]" or source:find("LuaDebug"))then return end
 			file = getSource(source);
 			LuaDebugger.currentFileName = file
+			-- print(file)
 		end
 		file = LuaDebugger.currentFileName 
 		
