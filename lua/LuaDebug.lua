@@ -1009,7 +1009,7 @@ end
 
 
 local function getSource(source)
-	print(source,"source")
+	
 	if(LuaDebugger.pathCachePaths[source]) then
 	
 		return LuaDebugger.pathCachePaths[source]
@@ -1029,8 +1029,7 @@ local function getSource(source)
 
 	end
 	local index = file:find(".lua")
-	print("index",index)
-	print(string.len(file),"string.len(file)")
+	
 	if not index then
 		file = file..".lua"
 	else
@@ -1061,7 +1060,7 @@ local function getSource(source)
 	end
 	
 	LuaDebugger.pathCachePaths[source] = file
-	print(file,"file====")
+	
 	return file ;
 end
 
