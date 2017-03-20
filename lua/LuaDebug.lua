@@ -1100,7 +1100,7 @@ end
 
 
 local function getLuaFileName(str)
-	if(delimiter == '') then return "" end
+	
 	local pos = 0
 	local fileName = "";
 	-- for each divider found
