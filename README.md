@@ -10,4 +10,4 @@
  
 # 捐献      
 如果你想支持LuaIde 的开发 可以通过微信 扫下面的二维码进行支持
-(https://coding.net/u/k0204/p/imgres/git/raw/master/money.png)
+![IDE](https://coding.net/u/k0204/p/imgres/git/raw/master/money.png)
