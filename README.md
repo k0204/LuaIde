@@ -1,5 +1,5 @@
-# LuaIde
-* author:kangping
+# LuaIde  
+* author:kangping  
 *luaIde 是基于vscode开发的一款用于lua语言开发者使用的插件  
 *目标:致力于做最好的lua开发工具  
 *更新:luaide 个人开发者开发 持续更新  
