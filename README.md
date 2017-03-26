@@ -8,7 +8,7 @@
 1. 平台支持:win,mac  
 
 #重要提示
-1. 由于上传了源码 所以原来下载 LuaDebug 的地址由 lua/LuaDebug.lua 修改为 luaDebug/LuaDebug.lua
+1. 由于上传了源码 所以原来下载 LuaDebug 的地址由 lua/LuaDebug.lua 修改为 luaDebug/LuaDebug.lua  
 #更新记录
 1. 0.1.5 修改代码格式化bug   
 1. 将源代码提交至github 
@@ -16,7 +16,7 @@
 
 #注意: 0.1.0 版本改动比较大请删除.vscode/launch.json 文件 重写生成调试文件  
 #qq群 494653114
-# LuaDebug.lua [下载地址](https://github.com/k0204/LuaIde) (lua/LuaDebug.lua)
+# luaDebug/LuaDebug.lua [下载地址](https://github.com/k0204/LuaIde) 
 # 文档请直接查看[wiki](https://github.com/k0204/LuaIde/wiki) 
 
 # 捐献      
