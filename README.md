@@ -16,7 +16,7 @@
 
 #注意: 0.1.0 版本改动比较大请删除.vscode/launch.json 文件 重写生成调试文件  
 #qq群 494653114
-# LuaDebug.lua [下载地址](https://github.com/k0204/LuaIde) (https://github.com/k0204/LuaIde)
+# luaDebug/LuaDebug.lua [下载地址](https://github.com/k0204/LuaIde) 
 # 文档请直接查看[wiki](https://github.com/k0204/LuaIde/wiki) 
 
 # 捐献      
