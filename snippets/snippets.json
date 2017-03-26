@@ -1,0 +1,554 @@
+{
+	"then": {
+		"prefix": "then",
+		"body": "then",
+		"description": "then",
+		"scope": "source.lua"
+	},
+	"do": {
+		"prefix": "do",
+		"body": "do",
+		"description": "do",
+		"scope": "source.lua"
+	},
+	"else": {
+		"prefix": "else",
+		"body": "else",
+		"description": "else",
+		"scope": "source.lua"
+	},
+	"end": {
+		"prefix": "end",
+		"body": "end",
+		"description": "end",
+		"scope": "source.lua"
+	},
+	"while": {
+		"prefix": "while",
+		"body": "while ${1:condition} do\n\t${0:-- body}\nend",
+		"description": "while",
+		"scope": "source.lua"
+	},
+	"if": {
+		"prefix": "if",
+		"body": "if ${1:condition} then\n\t${0:-- body}\nend",
+		"description": "if",
+		"scope": "source.lua"
+	},
+	"ifel": {
+		"prefix": "ifel",
+		"body": "if ${1:condition} then\n\t${2:-- body}\nelse\n\t${0:-- body}\nend",
+		"description": "ifel",
+		"scope": "source.lua"
+	},
+	"elif": {
+		"prefix": "elif",
+		"body": "else if ${1:condition} then\n\t${0:-- body}\n",
+		"description": "elif",
+		"scope": "source.lua"
+	},
+	"fori": {
+		"prefix": "fori",
+		"body": "for ${1:i},${2:v} in ipairs(${3:table_name}) do\n\t${0:print(i,v)}\nend",
+		"description": "for i,v in ipairs()",
+		"scope": "source.lua"
+	},
+	"for": {
+		"prefix": "for",
+		"body": "for ${1:i}=${2:1},${3:10} do\n\t${0:print(i)}\nend",
+		"description": "for i=1,10",
+		"scope": "source.lua"
+	},
+	"forp": {
+		"prefix": "forp",
+		"body": "for ${1:k},${2:v} in pairs(${3:table_name}) do\n\t${0:print(k,v)}\nend",
+		"description": "for k,v in pairs()",
+		"scope": "source.lua"
+	},
+	"fun": {
+		"prefix": "fun",
+		"body": "function ${1:function_name}( ${2:...} )\n\t${0:-- body}\nend",
+		"description": "function",
+		"scope": "source.lua"
+	},
+	"function": {
+		"prefix": "function",
+		"body": "function ${1:function_name}( ${2:...} )\n\t${0:-- body}\nend",
+		"description": "function",
+		"scope": "source.lua"
+	},
+	"local": {
+		"prefix": "local",
+		"body": "local ${1:x} = ${0:1}",
+		"description": "local x = 1",
+		"scope": "source.lua"
+	},
+	"ret": {
+		"prefix": "ret",
+		"body": "return ${1:...}",
+		"description": "return ...",
+		"scope": "source.lua"
+	},
+	"req": {
+		"prefix": "req",
+		"body": "require(\"${1:module}\")",
+		"description": "require()",
+		"scope": "source.lua"
+	},
+	"require": {
+		"prefix": "require",
+		"body": "require(\"${1:module}\")",
+		"description": "require()",
+		"scope": "source.lua"
+	},
+	"ver": {
+		"prefix": "ver",
+		"body": "_VERSION",
+		"description": "_VERSION",
+		"scope": "source.lua"
+	},	
+	"version": {
+		"prefix": "version",
+		"body": "_VERSION",
+		"description": "_VERSION",
+		"scope": "source.lua"
+	},	
+	"assert": {
+		"prefix": "assert",
+		"body": "assert(${1:v}${2:[, message]})",
+		"description": "assert()",
+		"scope": "source.lua"
+	},
+	"collectgarbage": {
+		"prefix": "collectgarbage",
+		"body": "collectgarbage(${1:[opt]}${2:[, arg]})",
+		"description": "collectgarbage()",
+		"scope": "source.lua"
+	},
+	"dofile": {
+		"prefix": "dofile",
+		"body": "dofile(${1:[filename]})",
+		"description": "dofile ([filename])",
+		"scope": "source.lua"
+	},
+	"getmetatable": {
+		"prefix": "getmetatable",
+		"body": "getmetatable(${1:object})",
+		"description": "getmetatable (object)",
+		"scope": "source.lua"
+	},
+	"next": {
+		"prefix": "next",
+		"body": "next(${1:table}${2:[, index]})",
+		"description": "next (table [, index])",
+		"scope": "source.lua"
+	},
+	"print": {
+		"prefix": "print",
+		"body": "print(${1:...})",
+		"description": "print(...)",
+		"scope": "source.lua"
+	},
+	"select": {
+		"prefix": "select",
+		"body": "select(${1:index}, ${2:...})",
+		"description": "select (index, ···)",
+		"scope": "source.lua"
+	},
+	"setmetatable": {
+		"prefix": "setmetatable",
+		"body": "setmetatable(${1:table}, ${2:metatable})",
+		"description": "setmetatable (table, metatable)",
+		"scope": "source.lua"
+	},
+	"tonumber": {
+		"prefix": "tonumber",
+		"body": "tonumber(${1:e}${2:[, base]})",
+		"description": "tonumber (e [, base])",
+		"scope": "source.lua"
+	},
+	"tostring": {
+		"prefix": "tostring",
+		"body": "tostring(${1:v})",
+		"description": "tostring (v)",
+		"scope": "source.lua"
+	},
+	"type": {
+		"prefix": "type",
+		"body": "type(${1:v})",
+		"description": "type (v)",
+		"scope": "source.lua"
+	},
+	
+	"table.concat": {
+		"prefix": "table.concat",
+		"body": "table.concat( ${1:tablename}${2:, \", \"}${3:, start_index}${4:, end_index} )",
+		"description": "table.concat",
+		"scope": "source.lua"
+	},
+	"table.insert": {
+		"prefix": "table.insert",
+		"body": "table.insert( ${1:list},${2: [pos,]}${3: value} )",
+		"description": "table.insert",
+		"scope": "source.lua"
+	},
+	"table.remove": {
+		"prefix": "table.remove",
+		"body": "table.remove( ${1:list},${2: [pos,]} )",
+		"description": "table.remove",
+		"scope": "source.lua"
+	},
+	"table.sort": {
+		"prefix": "table.sort",
+		"body": "table.sort( ${1:tablename}${2:, sortfunction} )",
+		"description": "table.sort",
+		"scope": "source.lua"
+	},
+	
+	"string.byte": {
+		"prefix": "string.byte",
+		"body": "string.byte( ${1:s}${2:[, i]}${3:[, j]} )",
+		"description": "string.byte",
+		"scope": "source.lua"
+	},
+	"string.char": {
+		"prefix": "string.char",
+		"body": "string.char( ${1:...} )",
+		"description": "string.char",
+		"scope": "source.lua"
+	},
+	"string.find": {
+		"prefix": "string.find",
+		"body": "string.find( ${1:s},${2:pattern}${3:[, init]}${4:[, plain]} )",
+		"description": "string.find",
+		"scope": "source.lua"
+	},
+	"string.format": {
+		"prefix": "string.format",
+		"body": "string.format( \"${1:formatstring}\",${2:...} )",
+		"description": "string.format",
+		"scope": "source.lua"
+	},	
+	"string.gmatch": {
+		"prefix": "string.gmatch",
+		"body": "string.gmatch( ${1:s},${2:pattern} )",
+		"description": "string.gmatch",
+		"scope": "source.lua"
+	},	
+	"string.gsub": {
+		"prefix": "string.gsub",
+		"body": "string.gsub( ${1:s},${2:pattern},${3:repl}${4:[, n]} )",
+		"description": "string.gsub",
+		"scope": "source.lua"
+	},
+	"string.sub": {
+		"prefix": "string.sub",
+		"body": "string.sub( ${1:s}, ${2:i}${3:[, j]} )",
+		"description": "string.sub",
+		"scope": "source.lua"
+	},
+	"string.len": {
+		"prefix": "string.len",
+		"body": "string.len( ${1:s} )",
+		"description": "string.len",
+		"scope": "source.lua"
+	},
+	"string.lower": {
+		"prefix": "string.lower",
+		"body": "string.lower( ${1:s} )",
+		"description": "string.lower",
+		"scope": "source.lua"
+	},
+	"string.match": {
+		"prefix": "string.match",
+		"body": "string.match( ${1:s},${2:pattern}${3:[, init]} )",
+		"description": "string.match",
+		"scope": "source.lua"
+	},
+	"string.upper": {
+		"prefix": "string.upper",
+		"body": "string.upper( ${1:s} )",
+		"description": "string.upper",
+		"scope": "source.lua"
+	},
+	"string.rep": {
+		"prefix": "string.rep",
+		"body": "string.rep( ${1:s}, ${2:n}${3:[, rep]} )",
+		"description": "string.rep",
+		"scope": "source.lua"
+	},
+	"string.reverse": {
+		"prefix": "string.reverse",
+		"body": "string.reverse( ${1:s} )",
+		"description": "string.reverse",
+		"scope": "source.lua"
+	},
+	
+	"math.abs": {
+		"prefix": "math.abs",
+		"body": "math.abs( ${1:x} )",
+		"description": "math.abs",
+		"scope": "source.lua"
+	},
+	"math.acos": {
+		"prefix": "math.acos",
+		"body": "math.acos( ${1:x} )",
+		"description": "math.acos",
+		"scope": "source.lua"
+	},
+	"math.asin": {
+		"prefix": "math.asin",
+		"body": "math.asin( ${1:x} )",
+		"description": "math.asin",
+		"scope": "source.lua"
+	},
+	"math.ceil": {
+		"prefix": "math.ceil",
+		"body": "math.ceil( ${1:x} )",
+		"description": "math.ceil",
+		"scope": "source.lua"
+	},
+	"math.cos": {
+		"prefix": "math.cos",
+		"body": "math.cos( ${1:x} )",
+		"description": "math.cos",
+		"scope": "source.lua"
+	},
+	"math.deg": {
+		"prefix": "math.deg",
+		"body": "math.deg( ${1:x} )",
+		"description": "math.deg",
+		"scope": "source.lua"
+	},
+	"math.exp": {
+		"prefix": "math.exp",
+		"body": "math.exp( ${1:x} )",
+		"description": "math.exp",
+		"scope": "source.lua"
+	},
+	"math.floor": {
+		"prefix": "math.floor",
+		"body": "math.floor( ${1:x} )",
+		"description": "math.floor",
+		"scope": "source.lua"
+	},
+	"math.modf": {
+		"prefix": "math.modf",
+		"body": "math.modf( ${1:x} )",
+		"description": "math.modf",
+		"scope": "source.lua"
+	},
+	"math.math.randomseed": {
+		"prefix": "math.math.randomseed",
+		"body": "math.math.randomseed( ${1:x} )",
+		"description": "math.math.randomseed",
+		"scope": "source.lua"
+	},
+	"math.sin": {
+		"prefix": "math.sin",
+		"body": "math.sin( ${1:x} )",
+		"description": "math.sin",
+		"scope": "source.lua"
+	},
+	"math.sqrt": {
+		"prefix": "math.sqrt",
+		"body": "math.sqrt( ${1:x} )",
+		"description": "math.sqrt",
+		"scope": "source.lua"
+	},
+	"math.tan": {
+		"prefix": "math.tan",
+		"body": "math.tan( ${1:x} )",
+		"description": "math.tan",
+		"scope": "source.lua"
+	},
+	"math.tointeger": {
+		"prefix": "math.tointeger",
+		"body": "math.tointeger( ${1:x} )",
+		"description": "math.tointeger",
+		"scope": "source.lua"
+	},
+	"math.type": {
+		"prefix": "math.type",
+		"body": "math.type( ${1:x} )",
+		"description": "math.type",
+		"scope": "source.lua"
+	},
+	"math.random": {
+		"prefix": "math.random",
+		"body": "math.random( ${1:[m]}${2:[, n]} )",
+		"description": "math.random",
+		"scope": "source.lua"
+	},
+	"math.log": {
+		"prefix": "math.log",
+		"body": "math.log( ${1:x}${2:[, base]} )",
+		"description": "math.log",
+		"scope": "source.lua"
+	},
+	"math.max": {
+		"prefix": "math.max",
+		"body": "math.max( ${1:x},${2:...} )",
+		"description": "math.max",
+		"scope": "source.lua"
+	},
+	"math.min": {
+		"prefix": "math.min",
+		"body": "math.min( ${1:x},${2:...} )",
+		"description": "math.min",
+		"scope": "source.lua"
+	},
+	"math.fmod": {
+		"prefix": "math.fmod",
+		"body": "math.fmod( ${1:x},${2:y} )",
+		"description": "math.fmod",
+		"scope": "source.lua"
+	},	
+	"math.atan": {
+		"prefix": "math.atan",
+		"body": "math.atan( ${1:y}${2:[, x]} )",
+		"description": "math.atan",
+		"scope": "source.lua"
+	},	
+	
+	"coroutine.create": {
+		"prefix": "coroutine.create",
+		"body": "coroutine.create( ${1:function} )",
+		"description": "coroutine.create",
+		"scope": "source.lua"
+	},	
+	"coroutine.isyieldable": {
+		"prefix": "coroutine.isyieldable",
+		"body": "coroutine.isyieldable( )",
+		"description": "coroutine.isyieldable",
+		"scope": "source.lua"
+	},
+	"coroutine.resume": {
+		"prefix": "coroutine.resume",
+		"body": "coroutine.resume( ${1:co}${2:[, val1, ···]} )",
+		"description": "coroutine.resume",
+		"scope": "source.lua"
+	},	
+	"coroutine.running": {
+		"prefix": "coroutine.running",
+		"body": "coroutine.running( )",
+		"description": "coroutine.running",
+		"scope": "source.lua"
+	},
+	"coroutine.status": {
+		"prefix": "coroutine.status",
+		"body": "coroutine.status( ${1:co} )",
+		"description": "coroutine.status",
+		"scope": "source.lua"
+	},	
+	"coroutine.wrap": {
+		"prefix": "coroutine.wrap",
+		"body": "coroutine.wrap( ${1:function} )",
+		"description": "coroutine.wrap",
+		"scope": "source.lua"
+	},
+	"coroutine.yield": {
+		"prefix": "coroutine.yield",
+		"body": "coroutine.yield( ${1:...} )",
+		"description": "coroutine.yield",
+		"scope": "source.lua"
+	},
+	
+	"debug.debug": {
+		"prefix": "debug.debug",
+		"body": "debug.debug()",
+		"description": "debug.debug ()",
+		"scope": "source.lua"
+	},
+	"debug.gethook": {
+		"prefix": "debug.gethook",
+		"body": "debug.gethook( ${1:[thread]} )",
+		"description": "debug.gethook ([thread])",
+		"scope": "source.lua"
+	},
+	"debug.getlocal": {
+		"prefix": "debug.getlocal",
+		"body": "debug.getlocal( ${1:[thread],}${2:f}${3:[, local]} )",
+		"description": "debug.getlocal ([thread,] f, local)",
+		"scope": "source.lua"
+	},
+	"debug.getinfo": {
+		"prefix": "debug.getinfo",
+		"body": "debug.getinfo( ${1:[thread],}${2:f}${3:[, what]} )",
+		"description": "debug.getinfo ([thread,] f [, what])",
+		"scope": "source.lua"
+	},
+	"debug.getmetatable": {
+		"prefix": "debug.getmetatable",
+		"body": "debug.getmetatable( ${1:value} )",
+		"description": "debug.getmetatable (value)",
+		"scope": "source.lua"
+	},
+	"debug.getregistry": {
+		"prefix": "debug.getregistry",
+		"body": "debug.getregistry()",
+		"description": "debug.getregistry ()",
+		"scope": "source.lua"
+	},
+	"debug.getupvalue": {
+		"prefix": "debug.getupvalue",
+		"body": "debug.getupvalue( ${1:f}, ${2:up} )",
+		"description": "debug.getupvalue (f, up)",
+		"scope": "source.lua"
+	},
+	"debug.getuservalue ": {
+		"prefix": "debug.getuservalue ",
+		"body": "debug.getuservalue ( ${1:u} )",
+		"description": "debug.getuservalue (u)",
+		"scope": "source.lua"
+	},
+	"debug.sethook": {
+		"prefix": "debug.sethook",
+		"body": "debug.sethook( ${1:[thead,]}${2:hook}, ${3:mask}${4:[, count]} )",
+		"description": "debug.sethook ([thread,] hook, mask [, count])",
+		"scope": "source.lua"
+	},
+	"debug.setlocal": {
+		"prefix": "debug.setlocal",
+		"body": "debug.setlocal( ${1:[thead,]}${2:level}, ${3:local}, ${4:value} )",
+		"description": "debug.setlocal ([thread,] level, local, value)",
+		"scope": "source.lua"
+	},
+	"debug.setmetatable": {
+		"prefix": "debug.setmetatable",
+		"body": "debug.setmetatable( ${1:value}, ${2:table} )",
+		"description": "debug.setmetatable (value, table)",
+		"scope": "source.lua"
+	},
+	"debug.setupvalue": {
+		"prefix": "debug.setupvalue",
+		"body": "debug.setupvalue( ${1:f}, ${2:up}, ${3:value} )",
+		"description": "debug.setupvalue (f, up, value)",
+		"scope": "source.lua"
+	},
+	"debug.setuservalue": {
+		"prefix": "debug.setuservalue",
+		"body": "debug.setuservalue( ${1:udata}, ${2:value} )",
+		"description": "debug.setuservalue (udata, value)",
+		"scope": "source.lua"
+	},
+	"debug.traceback": {
+		"prefix": "debug.traceback",
+		"body": "debug.traceback( ${1:[thread,]}${2:[message]}${3:[, level]} )",
+		"description": "debug.traceback ([thread,] [message [, level]])",
+		"scope": "source.lua"
+	},
+	"debug.upvalueid": {
+		"prefix": "debug.upvalueid",
+		"body": "debug.upvalueid( ${1:f}, ${2:n})",
+		"description": "debug.upvalueid (f, n)",
+		"scope": "source.lua"
+	},
+	"debug.upvaluejoin": {
+		"prefix": "debug.upvaluejoin",
+		"body": "debug.upvaluejoin( ${1:f1}, ${2:n1}, ${3:f2}, ${4:n2} )",
+		"description": "debug.upvaluejoin (f1, n1, f2, n2)",
+		"scope": "source.lua"
+	}
+	
+}
