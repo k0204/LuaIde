@@ -10,7 +10,7 @@
 #重要提示
 1. 由于上传了源码 所以原来下载 LuaDebug 的地址由 lua/LuaDebug.lua 修改为 luaDebug/LuaDebug.lua  
 #更新记录
-1. 0.1.5 修改代码格式化bug   
+1. 0.1.6 修改代码格式化bug   
 1. 将源代码提交至github 
 
 
