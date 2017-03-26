@@ -333,8 +333,7 @@ export class LuaFormatParseTool {
 
 
 
-      // token.value = token.value.replace(/\'/g, "\\'");
-      // token.value = token.value.replace(/\"/g, '\\"');
+     
       token.value = token.value.replace(/\\/g, "\\\\");
       token.value = token.value.replace(/\t/g, "\\t");
       token.value = token.value.replace(/\n/g, "\\n");
@@ -343,6 +342,8 @@ export class LuaFormatParseTool {
       if (token.value == '"') {
         content += '\"\\\"\"'
       } else {
+          token.value = token.value.replace(/\'/g, "\\'");
+       token.value = token.value.replace(/\"/g, '\\"');
         content += token.delimiter + token.value + token.enddelimiter;
       }
 
