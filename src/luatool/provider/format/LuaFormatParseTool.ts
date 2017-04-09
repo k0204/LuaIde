@@ -330,22 +330,22 @@ export class LuaFormatParseTool {
 
     //字符串 添加"" '' --[[]]
     if (token.type == TokenTypes.StringLiteral && token.delimiter != null) {
+      content += token.delimiter + token.value + token.enddelimiter;
 
 
 
-     
-      token.value = token.value.replace(/\\/g, "\\\\");
-      token.value = token.value.replace(/\t/g, "\\t");
-      token.value = token.value.replace(/\n/g, "\\n");
-      token.value = token.value.replace(/\f/g, "\\f");
-      token.value = token.value.replace(/\r/g, "\\r");
-      if (token.value == '"') {
-        content += '\"\\\"\"'
-      } else {
-          token.value = token.value.replace(/\'/g, "\\'");
-       token.value = token.value.replace(/\"/g, '\\"');
-        content += token.delimiter + token.value + token.enddelimiter;
-      }
+      // token.value = token.value.replace(/\\/g, "\\\\");
+      // token.value = token.value.replace(/\t/g, "\\t");
+      // token.value = token.value.replace(/\n/g, "\\n");
+      // token.value = token.value.replace(/\f/g, "\\f");
+      // token.value = token.value.replace(/\r/g, "\\r");
+      // if (token.value == '"') {
+      //   content += '\"\\\"\"'
+      // } else {
+      //     token.value = token.value.replace(/\'/g, "\\'");
+      //  token.value = token.value.replace(/\"/g, '\\"');
+      //   content += token.delimiter + token.value + token.enddelimiter;
+      // }
 
 
 
@@ -954,7 +954,7 @@ export class LuaFormatParseTool {
       // ===  ' or "
       if (delimiter === charCode) break;
       if (92 === charCode) { // \
-        str += this.input.slice(stringStart, this.index - 1) + this.readEscapeSequence();
+        str += this.input.slice(stringStart, this.index - 1) + '\\' //+ this.readEscapeSequence();
         stringStart = this.index;
       }
       //"->没有了   or " ->换行了
