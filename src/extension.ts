@@ -107,14 +107,14 @@ export function activate(context: vscode.ExtensionContext) {
 				luaParse.Parse(uri, doc.getText())
 				index++;
 				// console.log(uri.path)
-				// vscode.window.setStatusBarMessage(uri.path)
+				 vscode.window.setStatusBarMessage(uri.path)
 				if (index < uris.length) {
 					parseLuaFile()
 				}
 
 				else {
-					// vscode.window.showInformationMessage("check complete!")
-					// vscode.window.setStatusBarMessage("")
+					 vscode.window.showInformationMessage("check complete!")
+					 vscode.window.setStatusBarMessage("")
 				}
 			}
 		)

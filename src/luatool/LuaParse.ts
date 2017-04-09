@@ -139,8 +139,7 @@ export class LuaParse {
       token.index = tokens.length;
       tokens.push(token);
     }
-    var date1:Date = new Date();
-    var time:number = date1.getMilliseconds() - data.getMilliseconds()
+   
     this.tokens = tokens;
     this.luaInfoManager.init(this, this.currentUri);
     this.tokenIndex = 0;
@@ -161,23 +160,13 @@ export class LuaParse {
             break;
         }
       }
-      // console.log("正确了")
+      
       //正确了删除错误提示
+      if(this.diagnosticCollection  && this.diagnosticCollection.has(this.currentUri)){
       this.diagnosticCollection.delete(this.currentUri)
+      }
       this.luaInfoManager.getFcim(this.currentUri).selfToGolbal();
     } else {
-      // var isAdd:boolean = true
-      // this.errorFilePaths.forEach(uri=>{
-      //   if(this.currentUri.path == uri.path)
-      //   {
-      //     isAdd = false;
-      //   }
-      // })
-      // if(isAdd)
-      // {
-      //   this.errorFilePaths.push(this.currentUri);
-      // }
-       this.luaInfoManager.getFcim(this.currentUri).selfToGolbal();
       console.log("错误的")
     }
 

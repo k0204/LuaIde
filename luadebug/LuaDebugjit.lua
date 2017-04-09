@@ -1,4 +1,4 @@
-
+local sethook = debug.sethook
 local debugger_stackInfo = nil
 local coro_debugger = nil
 local debugger_require = require
@@ -164,6 +164,7 @@ local function createJson()
 	json.EMPTY_ARRAY = {}
 	json.EMPTY_OBJECT = {}
 	-- Public functions
+
 	-- Private functions
 	local decode_scanArray
 	local decode_scanComment
@@ -212,7 +213,7 @@ local function createJson()
 			else	-- An object, not an array
 				for i, j in pairs(v) do
 					if isEncodable(i) and isEncodable(j) then
-						table.insert(rval, "\"" .. json_private.encodeString(i) .. '\":' .. json.encode(j))
+						table.insert(rval, "\"" .. json_private.encodeString(i) .. '":' .. json.encode(j))
 					end
 				end
 			end
@@ -276,6 +277,7 @@ local function createJson()
 	-- Following a Python-like convention, I have prefixed all these 'PRIVATE'
 	-- functions with an underscore.
 	-----------------------------------------------------------------------------
+
 	--- Scans an array from JSON into a Lua object
 	-- startPos begins at the start of the array.
 	-- Returns the array and the next starting position
@@ -407,6 +409,7 @@ local function createJson()
 		return string.sub(k, 2)
 	end})
 	-- END SoniEx2
+
 	--- Scans a JSON string from the opening inverted comma or single quote to the
 	-- end of the string.
 	-- Returns the string extracted as a Lua string,
@@ -459,7 +462,7 @@ local function createJson()
 		table.insert(t, string.sub(j, j + 1))
 		assert(string.find(s, startChar, j + 1), "String decoding failed: missing closing " .. startChar .. " at position " .. j .. "(for string at position " .. startPos .. ")")
 		return table.concat(t, ""), j + 2
-		-- END SoniEx2
+	-- END SoniEx2
 	end
 	
 	--- Scans a JSON string skipping all whitespace from the current start position.
@@ -481,8 +484,9 @@ local function createJson()
 	-- This just involves back-quoting inverted commas, back-quotes and newlines, I think ;-)
 	-- @param s The string to return as a JSON encoded (i.e. backquoted string)
 	-- @return The string appropriately escaped.
+
 	local escapeList = {
-		["\""] = '\\\"',
+		["\""] = '\\"',
 		['\\'] = '\\\\',
 		['/'] = '\\/',
 		[''] = '\\b',
@@ -545,13 +549,11 @@ local debugger_print = print
 local debug_server = nil
 local breakInfoSocket = nil
 local json = createJson()
-local LuaDebugger = {
+ LuaDebugger = {
 	fileMaps = {},
 	Run = true,  --表示正常运行只检测断点
 	StepIn = false,
-	StepInLevel = 0,
 	StepNext = false,
-	StepNextLevel = 0,
 	StepOut = false,
 	breakInfos = {},
 	runTimeType = nil,
@@ -560,11 +562,10 @@ local LuaDebugger = {
 	isProntToConsole = 1,
 	isDebugPrint = true,
 	hookType = "lrc",
-	currentFileName = "",
-	currentTempFunc = nil,
-	--分割字符串缓存
-	splitFilePaths = {},
-	DebugLuaFie="",
+	stepNextFun = nil,
+	DebugLuaFie = "",
+	runLineCount = 0,
+
 }
 LuaDebugger.event = {
 	S2C_SetBreakPoints = 1,
@@ -593,26 +594,26 @@ LuaDebugger.event = {
 	C2S_LoadLuaScript = 18,
 	C2S_DebugXpCall = 20,
 }
-function print1(...)
-	if(LuaDebugger.isProntToConsole == 1 or LuaDebugger.isProntToConsole == 3) then
-		debugger_print(...)
-	end
-	if(LuaDebugger.isProntToConsole == 1 or LuaDebugger.isProntToConsole == 2) then
-		if(debug_server) then
-			local arg = {...}    --这里的...和{}符号中间需要有空格号，否则会出错  
-			local str = ""
-			for k, v in pairs(arg) do
-				str = str .. tostring(v) .. "\t"
-			end
-			local sendMsg = {
-				event = LuaDebugger.event.C2S_LuaPrint,
-				data = {msg = str}
-			}
-			local sendStr = json.encode(sendMsg)
-			debug_server:send(sendStr .. "__debugger_k0204__")
-		end
-	end
-end
+-- function print(...)
+-- 	if(LuaDebugger.isProntToConsole == 1 or LuaDebugger.isProntToConsole == 3) then
+-- 		debugger_print(...)
+-- 	end
+-- 	if(LuaDebugger.isProntToConsole == 1 or LuaDebugger.isProntToConsole == 2) then
+-- 		if(debug_server) then
+-- 			local arg = {...}    --这里的...和{}符号中间需要有空格号，否则会出错  
+-- 			local str = ""
+-- 			for k, v in pairs(arg) do
+-- 				str = str .. tostring(v) .. "\t"
+-- 			end
+-- 			local sendMsg = {
+-- 				event = LuaDebugger.event.C2S_LuaPrint,
+-- 				data = {msg = str}
+-- 			}
+-- 			local sendStr = json.encode(sendMsg)
+-- 			debug_server:send(sendStr .. "__debugger_k0204__")
+-- 		end
+-- 	end
+-- end
 ----=============================工具方法=============================================
 local debug_hook = nil
 local function debugger_strSplit(input, delimiter)
@@ -643,7 +644,7 @@ local function debugger_dump(value, desciption, nesting)
 		return tostring(v)
 	end
 	local traceback = debugger_strSplit(debug.traceback("", 2), "\n")
-	print1("dump from: " .. debugger_strTrim(traceback[3]))
+	print("dump from: " .. debugger_strTrim(traceback[3]))
 	local function _dump(value, desciption, indent, nest, keylen)
 		desciption = desciption or "<var>"
 		spc = ""
@@ -687,7 +688,7 @@ local function debugger_dump(value, desciption, nesting)
 	end
 	_dump(value, desciption, "- ", 1)
 	for i, line in ipairs(result) do
-		print1(line)
+		print(line)
 	end
 end
 local function ToBase64(source_str)
@@ -772,6 +773,7 @@ debugger_stackInfo = function(ignoreCount, event)
 			end
 			if(file == "=[C]") then
 				isadd = false
+				
 			end
 		end
 		if not source then
@@ -801,10 +803,8 @@ debugger_stackInfo = function(ignoreCount, event)
 		stack = stackInfo.stack,
 		vars = stackInfo.vars,
 		funcs = stackInfo.funcs,
-		event = event,
-		funcsLength = #stackInfo.funcs
+		event = event
 	}
-	LuaDebugger.currentTempFunc = data.funcs[1]
 	return data
 end
 --==============================工具方法 end======================================================
@@ -827,10 +827,6 @@ local function debugger_receiveDebugBreakInfo()
 	end
 end
 local function splitFilePath(path)
-	if(LuaDebugger.splitFilePaths[path]) then
-		return LuaDebugger.splitFilePaths[path]
-	end
-	
 	local pos, arr = 0, {}
 	-- for each divider found
 	for st, sp in function() return string.find(path, '/', pos, true) end do
@@ -838,7 +834,6 @@ local function splitFilePath(path)
 		pos = sp + 1
 	end
 	table.insert(arr, string.sub(path, pos))
-	LuaDebugger.splitFilePaths[path] = arr
 	return arr
 end
 debugger_setBreak = function(datas)
@@ -1099,12 +1094,10 @@ local function debugger_getBreakVar(body, server)
 	end)
 end
 local function ResetDebugInfo()
-	LuaDebugger.Run = false
-	LuaDebugger.StepIn = false
-	LuaDebugger.StepNext = false
-	LuaDebugger.StepOut = false
-	LuaDebugger.StepNextLevel = 0
-	print("ResetDebugInfoResetDebugInfoResetDebugInfoResetDebugInfoResetDebugInfo")
+		LuaDebugger.Run = false
+		LuaDebugger.StepIn = false
+		LuaDebugger.StepNext = false
+		LuaDebugger.StepOut = false
 end
 local function debugger_loop(server)
 	server = debug_server
@@ -1118,32 +1111,37 @@ local function debugger_loop(server)
 			local netData = json.decode(line)
 			local event = netData.event;
 			local body = netData.data;
-			if event == LuaDebugger.event.S2C_SetBreakPoints then
-				--设置断点信息
+			if event == LuaDebugger.event.S2C_SetBreakPoints then --设置断点信息
+				
 				local function setB()
 					debugger_setBreak(body)
 				end
 				xpcall(setB, function(error)
 					print(error)
 				end)
-			elseif event == LuaDebugger.event.S2C_RUN then
+			elseif event == LuaDebugger.event.S2C_RUN then	--开始运行
+			
 				LuaDebugger.runTimeType = body.runTimeType
 				LuaDebugger.isProntToConsole = body.isProntToConsole
-				ResetDebugInfo()
+				
+				ResetDebugInfo();
 				LuaDebugger.Run = true
+				
 				local data = coroutine.yield()
 				LuaDebugger.currentDebuggerData = data;
 				debugger_sendMsg(server, data.event, {
 					stack = data.stack
 				})
-			elseif event == LuaDebugger.event.S2C_ReqVar then
+			elseif event == LuaDebugger.event.S2C_ReqVar then -- 获取变量信息
 				--请求数据信息
 				debugger_getBreakVar(body, server)
-			elseif event == LuaDebugger.event.S2C_NextRequest then
+			elseif event == LuaDebugger.event.S2C_NextRequest then -- 设置单步跳过
+			
+				
 				ResetDebugInfo()
 				LuaDebugger.StepNext = true
-				LuaDebugger.StepInLevel = 0
-				print("------------------------------")
+
+			
 				--设置当前文件名和当前行数
 				local data = coroutine.yield()
 				--重置调试信息
@@ -1151,10 +1149,11 @@ local function debugger_loop(server)
 				debugger_sendMsg(server, data.event, {
 					stack = data.stack
 				})
-			elseif(event == LuaDebugger.event.S2C_StepInRequest) then
+			elseif(event == LuaDebugger.event.S2C_StepInRequest) then	--单步跳入
 				--单步跳入
-				ResetDebugInfo()
+				ResetDebugInfo();
 				LuaDebugger.StepIn = true
+			
 				local data = coroutine.yield()
 				--重置调试信息
 				LuaDebugger.currentDebuggerData = data;
@@ -1181,192 +1180,105 @@ local function debugger_loop(server)
 end
 coro_debugger = coroutine.create(debugger_loop)
 debug_hook = function(event, line)
-	
-	if(not LuaDebugger.isHook) then
-		return
-	end
-	if(LuaDebugger.Run) then
-		if(event == "line") then
-			local isCheck = false
-			
-			for k, breakInfo in pairs(LuaDebugger.breakInfos) do
-				
-				for bk, linesInfo in pairs(breakInfo) do
-					
-					if(linesInfo.lines[line]) then
-						isCheck = true
-						break
-					end
-				end
-				if(isCheck) then
-					break
-				end
-			end
-			
-			if(not isCheck) then
-				return
-			end
-		else
-			
-			LuaDebugger.currentFileName = nil
-			LuaDebugger.currentTempFunc = nil
-			return
-			
-		end
-	end
-	--跳出
-	if(LuaDebugger.StepOut) then
-		
-		if(event == "line" or event == "call") then
-			return
-		end
-		local tempFun =  getinfo(2,"f").func
-		
-		if(LuaDebugger.currentDebuggerData.funcsLength == 1) then
-			ResetDebugInfo();
-			LuaDebugger.Run = true
-			
-		else
-			if(LuaDebugger.currentDebuggerData.funcs[2] == tempFun) then
-				local data = debugger_stackInfo(3, LuaDebugger.event.C2S_StepInResponse)
-				--挂起等待调试器作出反应
-				coroutine.resume(coro_debugger, data)
-			end
-		end
-		return
-	end
-	
 	local file = nil
-	if(event == "call") then
-		-- if(not LuaDebugger.StepOut) then
-		if(LuaDebugger.StepNext) then
-			LuaDebugger.StepNextLevel = LuaDebugger.StepNextLevel+1
+	if(event == "line") then
+		local funs = nil
+		local funlength =0
+		if(LuaDebugger.currentDebuggerData) then
+			funs = LuaDebugger.currentDebuggerData.funcs
+			funlength = #funs
 		end
-		local stepInfo = getinfo(2,"S")
+		local stepInfo = getinfo(2)
+		local tempFunc = stepInfo.func
 		local source = stepInfo.source
-		if(source:find(LuaDebugger.DebugLuaFie) or source == "=[C]") then
-			return
-		end
-		
 		file = getSource(source);
-		LuaDebugger.currentFileName = file
-		-- end
-	elseif(event == "return" or event == "tail return") then
-		-- if(not LuaDebugger.StepOut) then
-		if(LuaDebugger.StepNext) then
-			LuaDebugger.StepNextLevel = LuaDebugger.StepNextLevel-1
+		if(source == "=[C]" or source:find(LuaDebugger.DebugLuaFie)) then return end
+		if(funlength > 0 and funs[1] == tempFunc and LuaDebugger.currentLine ~= line) then
+			LuaDebugger.runLineCount = LuaDebugger.runLineCount+1
 		end
-		LuaDebugger.currentFileName = nil
-		
-		
-		-- end
-	elseif(event == "line") then
-		if(LuaDebugger.StepIn) then
-			local data = debugger_stackInfo(3, LuaDebugger.event.C2S_NextResponse)
-			--挂起等待调试器作出反应
-			LuaDebugger.currentTempFunc = data.funcs[1]
-			coroutine.resume(coro_debugger, data)
-		end
-		if(LuaDebugger.StepNext ) then
-			if( LuaDebugger.StepNextLevel == 0) then
-				local data = debugger_stackInfo(3, LuaDebugger.event.C2S_NextResponse)
-				--挂起等待调试器作出反应
-				LuaDebugger.currentTempFunc = data.funcs[1]
-				coroutine.resume(coro_debugger, data)
-				return
-			elseif( LuaDebugger.StepNextLevel < 0) then
+		if(LuaDebugger.StepOut) then
+			if(funlength == 1) then
 				ResetDebugInfo();
 				LuaDebugger.Run = true
-			end
-			
-		end
-
-		local stepInfo = nil
-		if(not LuaDebugger.currentFileName) then
-			 stepInfo = getinfo(2,"S")
-			local source = stepInfo.source
-			if(source == "=[C]" or source:find(LuaDebugger.DebugLuaFie)) then return end
-			file = getSource(source);
-			LuaDebugger.currentFileName = file
-		end
-		file = LuaDebugger.currentFileName
-		
-
-		--判断断点
-		local breakInfo = LuaDebugger.breakInfos[file]
-		if(breakInfo) then
-			local ischeck = false
-			for k, lineInfo in pairs(breakInfo) do
-				local lines = lineInfo.lines
-				if(lines and lines[line]) then
-					ischeck = true
-					break
+				return
+			else
+				if(funs[2] == tempFunc) then
+					local data = debugger_stackInfo(3, LuaDebugger.event.C2S_StepInResponse)
+					print("StepIn 挂起")
+					--挂起等待调试器作出反应
+					coroutine.resume(coro_debugger, data)
+					return
 				end
 			end
-			if(not ischeck) then return end
-			--并且在断点中
-			local info = stepInfo
-			if(not info) then
-				 info = getinfo(2)
+		end
+		if(LuaDebugger.StepIn) then
+			if(funs[1] == tempFunc and LuaDebugger.runLineCount == 0) then
+				return
 			end
-			local hitPathNames = splitFilePath(file)
-			
-			local hitCounts = {}
-			for k, lineInfo in pairs(breakInfo) do
-				local lines = lineInfo.lines
-				local pathNames = lineInfo.pathNames
-				if(lines and lines[line]) then
-					--判断路径
-					hitCounts[k] = 0
-					local hitPathNamesCount = # hitPathNames
-					local pathNamesCount = # pathNames
-					while(true) do
-						if(pathNames[pathNamesCount] ~= hitPathNames[hitPathNamesCount]) then
-							
-							break
+			local data = debugger_stackInfo(3, LuaDebugger.event.C2S_StepInResponse)
+			print("StepIn 挂起")
+			--挂起等待调试器作出反应
+			coroutine.resume(coro_debugger, data)
+			return
+		end
+		if(LuaDebugger.StepNext  ) then
+			if(LuaDebugger.currentLine == line) then
+				return
+			end
+			if(funs) then
+				if(funs[1] ~= tempFunc) then
+					--判断是否是和下一个fun 相同如果相同
+					if(funlength >1) then
+						if(funs[2] == tempFunc) then
 						else
-							hitCounts[k] = hitCounts[k] + 1
+							return
 						end
-						pathNamesCount = pathNamesCount - 1
-						hitPathNamesCount = hitPathNamesCount - 1
-						if(pathNamesCount <= 0 or hitPathNamesCount <= 0) then
-							break;
-						end
+					else
+						return
 					end
 				end
 			end
-			local hitFieName = ""
-			local maxCount = 0
-			for k, v in pairs(hitCounts) do
-				if(v > maxCount) then
-					maxCount = v
-					hitFieName = k;
-				end
+			local data = debugger_stackInfo(3, LuaDebugger.event.C2S_NextResponse)
+			LuaDebugger.runLineCount = 0
+			LuaDebugger.currentLine = line
+			--挂起等待调试器作出反应
+			coroutine.resume(coro_debugger, data)
+			return
+		end
+		local isHit = false
+		local sevent = nil
+		--断点判断
+		if(isHit == false and debugger_checkIsBreak(file, line)) then
+			if(funs  and funs[1] == tempFunc and LuaDebugger.runLineCount == 0) then
+				LuaDebugger.runLineCount = 0
+				return
 			end
-			local hitPathNamesLength = #hitPathNames
-			if(hitPathNamesLength == 1 or(hitPathNamesLength > 1 and maxCount > 1)) then
-				if(hitFieName ~= "") then
-					local data = debugger_stackInfo(3, LuaDebugger.event.C2S_HITBreakPoint)
-					--挂起等待调试器作出反应
-					
-					coroutine.resume(coro_debugger, data)
-				end
-			end
+			LuaDebugger.runLineCount = 0
+			LuaDebugger.currentLine = line
+			isHit = true
+			sevent = LuaDebugger.event.C2S_HITBreakPoint
+			--调用 coro_debugger 并传入 参数
+			local data = debugger_stackInfo(3, sevent)
+			--挂起等待调试器作出反应
+			coroutine.resume(coro_debugger, data)
 		end
 	end
 end
 local function debugger_xpcall()
 	--调用 coro_debugger 并传入 参数
+	print("xxxxxxxxxxxxxxxxxxxxxddddddddddddddd")
 	local data = debugger_stackInfo(4, LuaDebugger.event.C2S_HITBreakPoint)
 	--挂起等待调试器作出反应
 	coroutine.resume(coro_debugger, data)
 end
 --调试开始
 local function start()
-	LuaDebugger.DebugLuaFie = getLuaFileName(getinfo(1).source)
+	
 	local socket = createSocket()
 	print(controller_host)
 	print(controller_port)
+	
+	
 	local server = socket.connect(controller_host, controller_port)
 	debug_server = server;
 	if server then
@@ -1382,7 +1294,7 @@ local function start()
 				name = "mainSocket"
 			})
 			xpcall(function()
-				debug.sethook(debug_hook, "lrc")
+				sethook(debug_hook, "lrc")
 			end, function(error)
 				print("error:", error)
 			end)
@@ -1392,6 +1304,14 @@ local function start()
 end
 function StartDebug(host, port)
 	
+	
+	LuaDebugger.DebugLuaFie = getLuaFileName(getinfo(1).source)
+	local index = LuaDebugger.DebugLuaFie:find("%.lua")
+		if  index then
+			local fileNameLength = string.len(LuaDebugger.DebugLuaFie)
+			LuaDebugger.DebugLuaFie = LuaDebugger.DebugLuaFie:sub(1,fileNameLength-4)
+			print("LuaDebugger.DebugLuaFie:"..LuaDebugger.DebugLuaFie)
+		end
 	if(not host) then
 		print("error host nil")
 	end

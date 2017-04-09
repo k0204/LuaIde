@@ -29,7 +29,7 @@ export class LuaDebug extends DebugSession {
 	private breakPointData_: BreakPointData;
 	private _breakpointId = 1000;
 	private luaStartProc: child_process.ChildProcess;
-	public stackEventType: string = ""
+	
 	public runtimeType: string;
 	public localRoot: string;
 	public isHitBreak: boolean = false
@@ -66,7 +66,6 @@ export class LuaDebug extends DebugSession {
 	}
 	protected setupProcessHanlders() {
 		this.luaProcess.on('C2S_HITBreakPoint', result => {
-			this.stackEventType = result.data.eventType
 			this.scopesManager_.setStackInfos(result.data.stack)
 			this.sendEvent(new StoppedEvent('breakpoint', 1));
 		})
@@ -101,6 +100,10 @@ export class LuaDebug extends DebugSession {
 		this.luaStartProc.on('error', error => {
 			this.sendEvent(new OutputEvent("error:" + error.message));
 		});
+		
+		// this.luaStartProc.on("data",function(data:string){
+		// 	this.sendEvent(new OutputEvent(data ));
+		// })
 		this.luaStartProc.stderr.setEncoding('utf8');
 		this.luaStartProc.stderr.on('data', error => {
 			luadebug.sendEvent(new OutputEvent(error + "\n"))
@@ -185,19 +188,7 @@ export class LuaDebug extends DebugSession {
 
 			var tname = path.substring(path.lastIndexOf("/") + 1)
 			var line = stacckInfo.currentline
-			if (path != "" && !fs.existsSync(path)) {
-					path = ""
-					if(i==0){
-						continue
-					}
-
-			}
-			if (i == 0) {
-
-				if (this.stackEventType == "call") {
-					line = stacckInfo.linedefined
-				}
-			}
+		
 			frames.push(new StackFrame(i, stacckInfo.scoreName,
 				new Source(tname, path),
 				line))
@@ -230,7 +221,6 @@ export class LuaDebug extends DebugSession {
 		else {
 			this.sendResponse(response)
 		}
-
 
 	}
 	/**

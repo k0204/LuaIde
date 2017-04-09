@@ -38,6 +38,7 @@ export class LuaFormatParseTool {
 
       var token: TokenInfo = this.lex();
       if (token.error != null) {
+        this.formatComent = text
         return;
       }
       if (token.type == TokenTypes.EOF) {
@@ -195,7 +196,7 @@ export class LuaFormatParseTool {
       if (token.type == TokenTypes.Wrap) {
         if (!newWrap) {
           content += "\n"
-          newWrap = true
+          //  newWrap = true
         }
         if (nextToken != null && nextToken.type == TokenTypes.Keyword &&
           (nextToken.value == "else" || nextToken.value == "elseif")) {
@@ -332,18 +333,17 @@ export class LuaFormatParseTool {
     if (token.type == TokenTypes.StringLiteral && token.delimiter != null) {
 
 
-
-     
-      token.value = token.value.replace(/\\/g, "\\\\");
-      token.value = token.value.replace(/\t/g, "\\t");
-      token.value = token.value.replace(/\n/g, "\\n");
-      token.value = token.value.replace(/\f/g, "\\f");
-      token.value = token.value.replace(/\r/g, "\\r");
-      if (token.value == '"') {
-        content += '\"\\\"\"'
-      } else {
-          token.value = token.value.replace(/\'/g, "\\'");
-       token.value = token.value.replace(/\"/g, '\\"');
+      if (token.delimiter == "[[") {
+        content += '[[' + token.value + ']]'
+      }
+      else {
+        token.value = token.value.replace(/\\/g, "\\\\");
+        token.value = token.value.replace(/\t/g, "\\t");
+        token.value = token.value.replace(/\n/g, "\\n");
+        token.value = token.value.replace(/\f/g, "\\f");
+        token.value = token.value.replace(/\r/g, "\\r");
+        token.value = token.value.replace(/\'/g, "\\'");
+        token.value = token.value.replace(/\"/g, '\\"');
         content += token.delimiter + token.value + token.enddelimiter;
       }
 
@@ -1064,11 +1064,11 @@ export class LuaFormatParseTool {
           if (this.tokens.length > 0) {
             currenToken = this.tokens[this.tokens.length - 1]
           }
-          if (currenToken == null || currenToken.type != TokenTypes.Wrap) {
-            var token: TokenInfo = new TokenInfo()
-            token.type = TokenTypes.Wrap;
-            this.tokens.push(token);
-          }
+          // if (currenToken == null || currenToken.type != TokenTypes.Wrap) {
+          var token: TokenInfo = new TokenInfo()
+          token.type = TokenTypes.Wrap;
+          this.tokens.push(token);
+          // }
 
         }
 

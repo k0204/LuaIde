@@ -93,7 +93,24 @@ export class LuaProcess extends EventEmitter {
         var socket = this.luaDebug.isHitBreak == true ? this.mainSocket : this.breakPointSocket;
         this.sendMsg(LuaDebuggerEvent.S2C_LoadLuaScript, data, socket)
     }
-    
+    //檢查stack 的第一個文件是否存
+    public checkStackTopFileIsExist(stackInfo)
+    {   
+        var path = stackInfo.src
+       
+        if (path.indexOf(".lua") == -1) {
+					path = path + ".lua";
+				}
+				
+       path = this.luaDebug.convertToServerPath(stackInfo.src)
+       var isEx = fs.existsSync(path)
+        if (path == "" || !fs.existsSync(path)) {
+			return false
+		}else
+        {
+            return true
+        }
+    }
     public createServer() {
         this.jsonStrs = new Map<net.Socket, string>()
         var timeout = 20000;//超时
@@ -163,13 +180,26 @@ export class LuaProcess extends EventEmitter {
 
                         luaProcess.emit("C2S_ReqVar", jdata)
                     } else if (event == LuaDebuggerEvent.C2S_NextResponse) {
-                        luaProcess.emit("C2S_NextResponse", jdata);
+                         luaProcess.emit("C2S_NextResponse", jdata);
+                        // if(luaProcess.checkStackTopFileIsExist(jdata.data.stack[0])){
+                        //     luaProcess.emit("C2S_NextResponse", jdata);
+                        // }else
+                        // {
+                        //      luaProcess.sendMsg(LuaDebuggerEvent.S2C_NextRequest,-1)
+                        // }
                     }
                     else if (event == LuaDebuggerEvent.S2C_NextResponseOver) {
 
                         luaProcess.emit("S2C_NextResponseOver", jdata);
                     } else if (event == LuaDebuggerEvent.C2S_StepInResponse) {
+                        //  if(luaProcess.checkStackTopFileIsExist(jdata.data.stack[0])){
+                        //      luaProcess.emit("C2S_StepInResponse", jdata);
+                        // }else
+                        // {
+                        //     luaProcess.sendMsg(LuaDebuggerEvent.S2C_StepInRequest,-1)
+                        // }
                         luaProcess.emit("C2S_StepInResponse", jdata);
+                       
                     } else if (event == LuaDebuggerEvent.C2S_StepOutResponse) {
                         luaProcess.emit("C2S_StepOutResponse", jdata);
 

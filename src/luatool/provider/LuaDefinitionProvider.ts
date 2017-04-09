@@ -117,7 +117,7 @@ export function byteOffsetAt(document: vscode.TextDocument, position: vscode.Pos
     nameChats.forEach(c => {
         n += c;
     });
-    console.log(n)
+    // console.log(n)
     //分割
     var keyNames: Array<string> = new Array<string>();
     var tempNames: Array<string> = n.split('.')

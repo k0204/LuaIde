@@ -267,11 +267,16 @@ export class LuaInfoManager {
                 fcoitems,
                 items, keys.length == 1)
             var index = 2;
-            while (true) {
+            while (true && keys.length > 1 ) {
                 CLog();
                 if (index > keys.length) {
-                    var lasttKey: string = keys[1];
-                    this.getLastKeyCompletionItem(lasttKey, items)
+                    if(keys.length%2 == 0){
+                        var lasttKey: string = keys[1];
+                         
+                      
+                       items = this.getLastKeyCompletionItem(lasttKey, items)
+                    }
+                    
                     break;
                 }
                 var tipType: number = keys[keys.length - index] == '.' ? 1 : 2;
@@ -332,32 +337,37 @@ export class LuaInfoManager {
         return completionItems;
     }
 
-    public getLastKeyCompletionItem(lasttKey: string, items: Array<LuaFiledCompletionInfo>) {
-        if (lasttKey == null) return
-        lasttKey = lasttKey.toLocaleLowerCase();
-        if (lasttKey != "self") {
-            this.fileCompletionItemManagers.forEach((v, k) => {
-                v.luaGolbalCompletionInfo.lowerCaseItems.forEach((v1, k1) => {
-                    if (lasttKey == k1) {
+    public getLastKeyCompletionItem(lasttKey: string, items: Array<LuaFiledCompletionInfo>):Array<LuaFiledCompletionInfo> {
+        // if (lasttKey == null) return
+        // lasttKey = lasttKey.toLocaleLowerCase();
+        // if (lasttKey != "self") {
+        //     this.fileCompletionItemManagers.forEach((v, k) => {
+        //         v.luaGolbalCompletionInfo.lowerCaseItems.forEach((v1, k1) => {
+        //             if (lasttKey == k1) {
 
-                        v1.items.forEach((v2, k2) => {
-                            items.push(v2)
+        //                 v1.items.forEach((v2, k2) => {
+        //                     items.push(v2)
+        //                 })
+        //             }
+        //         })
+        //         v.luaFunCompletionInfo.lowerCaseItems.forEach((v1, k1) => {
+        //             if (lasttKey == k1) {
+        //                 v1.items.forEach((v2, k2) => {
+        //                     items.push(v2)
+        //                 })
+        //             }
+        //         })
+        //     })
+        // }
+        var items1: Array<LuaFiledCompletionInfo> = new Array<LuaFiledCompletionInfo>();
+
+        items.forEach(element => {
+                element.items.forEach((v2, k2) => {
+                           items1.push( v2) 
                         })
-                    }
-                })
-                v.luaFunCompletionInfo.lowerCaseItems.forEach((v1, k1) => {
-                    if (lasttKey == k1) {
-                        v1.items.forEach((v2, k2) => {
-                            items.push(v2)
-                        })
-                    }
-                })
-            })
-        }
-        // var items: Array<LuaFiledCompletionInfo> = new Array<LuaFiledCompletionInfo>();
-
-
-
+          
+        });
+        return items1
     }
 
 

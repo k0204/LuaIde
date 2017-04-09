@@ -3,7 +3,7 @@
     "displayName": "LuaIde",
     "description": "luaIde unity cocos quick debugger",
     "license": "MIT",
-    "version": "0.1.5",
+    "version": "0.1.6",
     "publisher": "kangping",
     "author": {
 		"name": "kangping",
@@ -340,7 +340,13 @@
 					"type": "boolean",
 					"default": true,
 					"description": "是否检查方法参数相同,如果为true 一个方法中出现相同的参数名就会报错,为false 就忽略"
+				},
+				"luaide.isShowDest": {
+					"type": "boolean",
+					"default": false,
+					"description": "是否显示介绍"
 				}
+				
 			}
 		}
 	},

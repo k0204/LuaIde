@@ -35,14 +35,15 @@ export class LuaCompletionItemProvider implements vscode.CompletionItemProvider 
             var functionitem:Array<LuaFiledCompletionInfo> = LuaParse.lp.luaInfoManager.getFunctionCompletionItems(
                 document.uri,infos[0])
             if (functionitem == null) return resolve([])
-            functionitem.forEach(element => {
-           
-           
-                   suggestions.push(element)
-            
+           var argsItems : Array<LuaFiledCompletionInfo>;
+            if(infos[0].length == 1) {
+            argsItems = LuaParse.lp.luaInfoManager.getFunctionArgs(infos[1],document.uri)
+          }
+          if(argsItems) {
+          argsItems.forEach(element => {
+                suggestions.push(element)
             });
-          functionitem = LuaParse.lp.luaInfoManager.getFunctionArgs(infos[1],document.uri)
-         
+            }
             functionitem.forEach(element => {
                 suggestions.push(element)
             });

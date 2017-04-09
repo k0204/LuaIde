@@ -158,7 +158,7 @@ export class ScopesManager {
 
 		//
 		this.luaProcess_.on('C2S_NextResponse', result => {
-			this.luaDebug.stackEventType = result.data.eventType
+		
 			this.setStackInfos( result.data.stack);
 			this.stepRes(LuaDebuggerEvent.C2S_NextResponse);
 		})
@@ -171,12 +171,12 @@ export class ScopesManager {
 		 * 单步跳出
 		 */
 		this.luaProcess_.on('C2S_StepInResponse', result => {
-			this.luaDebug.stackEventType = result.data.eventType
+		
 			this.setStackInfos(result.data.stack);
 			this.stepRes(LuaDebuggerEvent.C2S_StepInResponse);
 		})
 		this.luaProcess_.on('C2S_StepOutResponse', result => {
-			this.luaDebug.stackEventType = result.data.eventType
+		
 			this.setStackInfos(result.data.stack);
 			this.stepRes(LuaDebuggerEvent.C2S_StepOutResponse);
 		})

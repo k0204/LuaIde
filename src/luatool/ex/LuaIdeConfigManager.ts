@@ -4,27 +4,39 @@ var path = require('path');
 var os = require('os');
 import child_process = require('child_process');
 import { getConfigDir } from "../../Common"
-
+import { StatisticsMain,StatisticsEvent } from "../../luatool/statistics/StatisticsMain"
+import {UserInfo} from "../ex/UserInfo"
 export class LuaIdeConfigManager {
     private macroConfig: Map<string, string>;
     //模板文件夹路径
     public luaTemplatesDir: string;
     public luaOperatorCheck: boolean;
     public luaFunArgCheck: boolean;
+    private userInfo:UserInfo;
+    private isShowDest:number;
+    private statisticsMain:StatisticsMain;
 
     constructor() {
+
         this.configInit();
         this.copyConfig();
+        this.readUserInfo();
+        this.statisticsMain = new StatisticsMain(this.userInfo)
+        this.showRecharge();
         this.showIndex();
 
     }
     public showIndex(){
+        if(this.userInfo.showIndex == 0 || this.isShowDest) {
         var extensionPath = vscode.extensions.getExtension("kangping.luaide").extensionPath
-                        extensionPath = path.join(extensionPath, "images", "index.html")
-                        var previewUri = vscode.Uri.file(extensionPath);
-                        vscode.commands.executeCommand('vscode.previewHtml', previewUri, vscode.ViewColumn.One, "LuaIde介绍").then(value => {
+            extensionPath = path.join(extensionPath, "images", "index.html")
+            var previewUri = vscode.Uri.file(extensionPath);
+            vscode.commands.executeCommand('vscode.previewHtml', previewUri, vscode.ViewColumn.One, "LuaIde介绍").then(value => {
 
-                        })
+            })
+           this.userInfo.showIndex = 1 
+            this.writeUserInfo();
+       }
     }
 
     public configInit() {
@@ -35,6 +47,8 @@ export class LuaIdeConfigManager {
         var macroListConfig: Array<any> = luaideConfig.get<Array<any>>("macroList");
         this.luaOperatorCheck = luaideConfig.get<boolean>("luaOperatorCheck")
         this.luaFunArgCheck = luaideConfig.get<boolean>("luaFunArgCheck")
+       this.isShowDest = luaideConfig.get<number>("isShowDest")
+        this.isShowDest == this.isShowDest == null ? false : this.isShowDest
         if (this.luaOperatorCheck == null) {
             this.luaOperatorCheck = true;
         }
@@ -59,30 +73,45 @@ export class LuaIdeConfigManager {
             this.luaTemplatesDir = null;
         }
     }
+    public readUserInfo()
+    {
+        var userPath = getConfigDir()
+        if (!fs.existsSync(userPath)) {
+            fs.mkdirSync(userPath, '0755');
+        }
+        var userInfoPath = path.join(userPath, "userInfo")
+         if (fs.existsSync(userInfoPath)) {
+                var contentText = fs.readFileSync(path.join(userInfoPath), 'utf-8');
+                this.userInfo = new UserInfo(JSON.parse(contentText))
+        }else
+        {
+            this.userInfo = new UserInfo(null);
+            this.writeUserInfo();
+        }
+    }
+    public writeUserInfo()
+    {
+        var userPath = getConfigDir()
+        if (!fs.existsSync(userPath)) {
+            fs.mkdirSync(userPath, '0755');
+        }
+        var userInfoPath = path.join(userPath, "userInfo")
+          try {
+                fs.writeFileSync(userInfoPath, this.userInfo.toString());
+            } catch (err) {
+
+            }
+    }
     public showRecharge() {
         var date: Date = new Date();
         var day = date.getDate();
         if (day == 11) {
-            var extensionPath = vscode.extensions.getExtension("kangping.luaide").extensionPath
-
-            var userPath = getConfigDir()
-            if (!fs.existsSync(userPath)) {
-                fs.mkdirSync(userPath, '0755');
-            }
-            var configFile = path.join(userPath, "donate")
-            if (fs.existsSync(configFile)) {
-                var contentText = fs.readFileSync(path.join(configFile), 'utf-8');
-                if (date.getMonth() + "" == contentText) {
-                    return
-                }
-            }
-            try {
-                fs.writeFileSync(configFile, date.getMonth() + "");
-            } catch (err) {
-
-            }
-
-
+           var extensionPath = vscode.extensions.getExtension("kangping.luaide").extensionPath
+           if (date.getMonth() + ""  == this.userInfo.donateShowMonth ) {
+               return
+           }
+           this.userInfo.donateShowMonth = date.getMonth() + ""
+           this.writeUserInfo();
 
             vscode.window.showInformationMessage("您愿意为luaIde捐献吗?", true, {
                 title: "好的",
@@ -93,12 +122,12 @@ export class LuaIdeConfigManager {
                     isCloseAffordance: true,
                     id: 2
                 }).then(value => {
-                    if (value.id == 1) {
+                    if (value != null && value.id == 1) {
                         var extensionPath = vscode.extensions.getExtension("kangping.luaide").extensionPath
                         extensionPath = path.join(extensionPath, "images", "donate.html")
                         var previewUri = vscode.Uri.file(extensionPath);
                         vscode.commands.executeCommand('vscode.previewHtml', previewUri, vscode.ViewColumn.One, "谢谢您的支持").then(value => {
-
+                       this.statisticsMain.sendMsg(StatisticsEvent.C2S_OpenRechrage)
                         })
 
                     }

@@ -17,7 +17,7 @@ export class LuaFuncitonCheck {
         {
           
             return this.checkGlobalFunction(functionToken);
-            ;
+            
         }else
         {
             if(this.checkIsLocal())

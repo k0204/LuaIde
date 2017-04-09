@@ -311,6 +311,10 @@ export class FileCompletionItemManager {
                 // startInfo.label += paramsstr;
             })
         }
+        this.addTableFileds(luaInfo,startInfos,lp);
+    }
+    private addTableFileds(luaInfo:LuaInfo,startInfos: Array<LuaFiledCompletionInfo>,lp: LuaParse)
+    {
         //判断 luaInfo 
         if (luaInfo.tableFileds && luaInfo.tableFileds.length) {
             var tableFileds: Array<LuaInfo> = luaInfo.tableFileds;
@@ -323,6 +327,7 @@ export class FileCompletionItemManager {
                                 new vscode.Position(filed.endToken.line, filed.endToken.lineStart));
                             startInfo.addItem(completion)
                             completion.setType(1)
+                            this.addTableFileds(filed,[completion],lp)
                         } else {
                             var completion: LuaFiledCompletionInfo = new LuaFiledCompletionInfo(
                                 startInfo.label + filed.name,
@@ -333,6 +338,7 @@ export class FileCompletionItemManager {
                             } else {
                                 completion.setType(1)
                             }
+                           this.addTableFileds(filed,[completion],lp)
                         }
                     }
                 })
@@ -340,7 +346,6 @@ export class FileCompletionItemManager {
             });
         }
     }
-
     public getCompletionKey(starIndex: number, endIndex: number): Array<CompletionItemSimpleInfo> {
         // console.log("getCompletionKey")
         var infos: Array<CompletionItemSimpleInfo> = new Array<CompletionItemSimpleInfo>();

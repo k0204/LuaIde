@@ -1,7 +1,9 @@
 import vscode = require('vscode');
 import child_process = require('child_process');
-import {LuaParse} from '../LuaParse'
-import {LuaFormatParseTool} from "./format/LuaFormatParseTool"
+import { LuaParse } from '../LuaParse'
+import { LuaFormatParseTool } from "./format/LuaFormatParseTool"
+import { LuaFormat } from "./format/LuaFormatChildProcess"
+
 var path = require('path');
 var fs = require('fs');
 var os = require('os');
@@ -21,16 +23,16 @@ export class LuaFormattingEditProvider implements vscode.DocumentFormattingEditP
         }
         var content = document.getText(range);
         var result = [];
-      
+
         content = this.format(content)
-        result.push(new vscode.TextEdit(range,content))
-       return Promise.resolve(result)
+        result.push(new vscode.TextEdit(range, content))
+        return Promise.resolve(result)
     }
 
 
-    private format(content: string) {
-
-        var luaFormatParseTool:LuaFormatParseTool = new LuaFormatParseTool(content)
+    private format(content: string): string {
+        //    return LuaFormat(content)
+        var luaFormatParseTool: LuaFormatParseTool = new LuaFormatParseTool(content)
         return luaFormatParseTool.formatComent
         // var extensionPath = vscode.extensions.getExtension("kangping.luaide").extensionPath;
         // var luaexePath = path.join(extensionPath, 'runtime','win','lua.exe')
@@ -56,32 +58,32 @@ export class LuaFormattingEditProvider implements vscode.DocumentFormattingEditP
         //         buffer = child_process.execFileSync(luaexePath, [runLuaPath]);
 
         //     }
-           
+
         //     var isWait:boolean = true 
         //    var content = buffer.toString("utf8")
         //    return content;
-            // luaStartProc.stderr.setEncoding('utf8');
-            // luaStartProc.stderr.on('error', error => {
-            //     console.log(error)
+        // luaStartProc.stderr.setEncoding('utf8');
+        // luaStartProc.stderr.on('error', error => {
+        //     console.log(error)
 
-            // });
-            
-            // //关闭事件
-            // luaStartProc.on('close', function (code) {
-            //     console.log("luaideclose")
-            //     isWait = false
+        // });
 
-               
-            // });
-            // luaStartProc.stdout.on('data', d => {
-            //     console.log(d)
-            // });
+        // //关闭事件
+        // luaStartProc.on('close', function (code) {
+        //     console.log("luaideclose")
+        //     isWait = false
 
-            // while(isWait)
-            // {
-            //     console.log("wait")
-            // }
-          
+
+        // });
+        // luaStartProc.stdout.on('data', d => {
+        //     console.log(d)
+        // });
+
+        // while(isWait)
+        // {
+        //     console.log("wait")
+        // }
+
 
 
 
