@@ -1010,7 +1010,7 @@ end
 local function getSource(source)
 	
 	if(LuaDebugger.pathCachePaths[source]) then
-		print("cunzai",LuaDebugger.pathCachePaths[source])
+	
 		return LuaDebugger.pathCachePaths[source]
 	end
 	local file = source
@@ -1429,7 +1429,6 @@ end
 			if(source == "=[C]" or source:find("LuaDebug"))then return end
 			file = getSource(source);
 			LuaDebugger.currentFileName = file
-			print(file)
 		end
 		file = LuaDebugger.currentFileName 
 		
