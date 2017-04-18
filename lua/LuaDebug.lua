@@ -940,7 +940,7 @@ local function debugger_checkFileIsBreak(fileName)
 	return LuaDebugger.breakInfos[fileName]
 end
 local function debugger_checkIsBreak(fileName, line)
-	
+
 	local breakInfo = LuaDebugger.breakInfos[fileName]
 	
 	
@@ -958,9 +958,22 @@ local function debugger_checkIsBreak(fileName, line)
 		if(not ischeck) then return end
 		
 		--并且在断点中
+		
 		local info = getinfo(3)
 		
-		local hitPathNames = splitFilePath(info.source)
+		
+		local source = info.source
+		source = source:gsub("\\", "/")
+		
+		if source:find("@") == 1 then
+			source = source:sub(2);
+		end
+		local index = source:find("%.lua")
+		if not index then
+			source = source .. ".lua"
+		end
+		
+		local hitPathNames = splitFilePath(source)
 		local isHit = true
 		local hitCounts = {}
 		
@@ -1106,6 +1119,7 @@ local function getSource(source)
 		return LuaDebugger.pathCachePaths[source]
 	end
 	local file = source
+	
 	file = file:gsub("\\", "/")
 	
 	if file:find("@") == 1 then
@@ -1619,7 +1633,12 @@ local function start()
 				
 			})
 			debugger_initDebugStepInfo();
-			debug.sethook(debug_hook, "lrc")
+			xpcall(function()
+				debug.sethook(debug_hook, "lrc")
+			 end,function(error) 
+			 print("error:",error)
+			end)
+			
 			coroutine.resume(coro_debugger, server)
 		end
 	end
