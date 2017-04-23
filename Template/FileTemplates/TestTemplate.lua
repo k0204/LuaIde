@@ -4,7 +4,7 @@
 -- Date: {time}
 --
 local {moduleName} = class("{moduleName}")
-function  ${moduleName}:ctor()
+function  {moduleName}:ctor()
     self:loadCCS("UI/test/bag.json")
     self:registerVarsByNames(self,vars)
     self:registerBtns({
