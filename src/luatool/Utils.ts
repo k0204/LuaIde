@@ -76,6 +76,7 @@ export function getComments(comments: Array<LuaComment>): string {
     if (comments.length == 1) {
         return comments[0].content;
     }
+    
     for (var i: number = 0; i < comments.length; i++) {
         var comment = comments[i].content
         var index = comment.trim().indexOf("==");
@@ -85,29 +86,56 @@ export function getComments(comments: Array<LuaComment>): string {
     }
     return commentStr;
 }
-
+export function getDescComment(comment:string)
+{
+    var commentStr:string = ""
+     var commentIndex:number = comment.indexOf("@desc")
+        if (commentIndex > -1) {
+            commentStr = comment.substring(commentIndex+5);
+           commentStr = trimCommentStr(commentStr)
+            
+          
+        } else if (commentStr == null) {
+            if(comment.indexOf("@") == 0){
+                commentStr =  ""
+            }else
+            {
+                commentStr = comment;
+            }
+           
+        }
+        return commentStr
+}
 
 export function getFirstComments(comments: Array<LuaComment>): string {
     if (comments == null) return "";
     var commentStr: string = null;
     if (comments.length == 1) {
-        return comments[0].content;
+        return  getDescComment(comments[0].content);
     }
-    var descStr: string = null;
+    
     for (var i: number = 0; i < comments.length; i++) {
         var comment = comments[i].content
         var index = comment.trim().indexOf("==");
         if (index == 0) { continue }
-        if (comment.indexOf("@desc") > -1) {
-            commentStr = comment;
-            break;
-        } else if (commentStr == null) {
-            commentStr = comment;
-        }
+       commentStr =  getDescComment(comments[0].content)
+       if(commentStr != ""){
+           break
+       }
     }
     return commentStr;
 }
-
+export function trimCommentStr(commentStr:string):string
+{
+     commentStr = commentStr.trim()
+     if(commentStr.indexOf(":") == 0) 
+     {
+         return commentStr.substring(1)
+     }else
+     {
+         return commentStr
+     }
+}
 
 
 export function getSelfToModuleName(tokens: Array<TokenInfo>, lp: LuaParse) {
@@ -145,6 +173,7 @@ export function getParamComment(param: string, comments: Array<LuaComment>) {
         var comment = comments[i].content
         if (comment.indexOf(paramName) > -1) {
             comment = comment.replace(paramName, "")
+            comment = trimCommentStr(comment)
             return comment;
         }
     }

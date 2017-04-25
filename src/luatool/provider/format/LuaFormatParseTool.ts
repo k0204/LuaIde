@@ -287,9 +287,10 @@ export class LuaFormatParseTool {
             !(nextToken.value == ']' && nextToken.type == TokenTypes.Punctuator) &&
             !(nextToken.value == ':' && nextToken.type == TokenTypes.Punctuator) &&
             !(nextToken.value == '}' && nextToken.type == TokenTypes.Punctuator) &&
+           
             !(nextToken.value == ';' && nextToken.type == TokenTypes.Punctuator) &&
             !(nextToken.value == '.' && nextToken.type == TokenTypes.Punctuator)) &&
-
+        !(token.value == '#' && token.type == TokenTypes.Punctuator) &&
           !(token.value == '.' && token.type == TokenTypes.Punctuator) &&
           !(token.value == '(' && token.type == TokenTypes.Punctuator) &&
           !(token.value == ':' && token.type == TokenTypes.Punctuator) &&
@@ -333,20 +334,20 @@ export class LuaFormatParseTool {
     if (token.type == TokenTypes.StringLiteral && token.delimiter != null) {
 
 
-      if (token.delimiter == "[[") {
-        content += '[[' + token.value + ']]'
-      }
-      else {
-        token.value = token.value.replace(/\\/g, "\\\\");
-        token.value = token.value.replace(/\t/g, "\\t");
-        token.value = token.value.replace(/\n/g, "\\n");
-        token.value = token.value.replace(/\f/g, "\\f");
-        token.value = token.value.replace(/\r/g, "\\r");
-        token.value = token.value.replace(/\'/g, "\\'");
-        token.value = token.value.replace(/\"/g, '\\"');
-        content += token.delimiter + token.value + token.enddelimiter;
-      }
-
+      // if (token.delimiter == "[[") {
+      //   content += '[[' + token.value + ']]'
+      // }
+      // else {
+      //   token.value = token.value.replace(/\\/g, "\\\\");
+      //   token.value = token.value.replace(/\t/g, "\\t");
+      //   token.value = token.value.replace(/\n/g, "\\n");
+      //   token.value = token.value.replace(/\f/g, "\\f");
+      //   token.value = token.value.replace(/\r/g, "\\r");
+      //   token.value = token.value.replace(/\'/g, "\\'");
+      //   token.value = token.value.replace(/\"/g, '\\"');
+      //   content += token.delimiter + token.value + token.enddelimiter;
+      // }
+      content += token.delimiter + token.value + token.enddelimiter;
 
 
 
@@ -954,7 +955,8 @@ export class LuaFormatParseTool {
       // ===  ' or "
       if (delimiter === charCode) break;
       if (92 === charCode) { // \
-        str += this.input.slice(stringStart, this.index - 1) + this.readEscapeSequence();
+        str += this.input.slice(stringStart, this.index - 1) + '\\' //+ this.readEscapeSequence();
+        // str += this.input.slice(stringStart, this.index - 1) + this.readEscapeSequence();
         stringStart = this.index;
       }
       //"->没有了   or " ->换行了

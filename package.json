@@ -1,18 +1,18 @@
 {
-    "name": "luaide",
-    "displayName": "LuaIde",
-    "description": "luaIde unity cocos quick debugger",
-    "license": "MIT",
-    "version": "0.1.6",
-    "publisher": "kangping",
-    "author": {
+	"name": "luaide",
+	"displayName": "LuaIde",
+	"description": "luaIde unity cocos quick debugger",
+	"license": "MIT",
+	"version": "0.1.9",
+	"publisher": "kangping",
+	"author": {
 		"name": "kangping",
 		"email": "1471768133@qq.com"
 	},
-    "engines": {
-        "vscode": "^1.10.0"
-    },
-   "icon": "images/logo.png",
+	"engines": {
+		"vscode": "^1.10.0"
+	},
+	"icon": "images/logo.png",
 	"categories": [
 		"Languages",
 		"Debuggers",
@@ -21,15 +21,14 @@
 	"activationEvents": [
 		"onLanguage:lua"
 	],
-    "main": "./out/src/extension",
-    "contributes": {
+	"main": "./out/src/extension",
+	"contributes": {
 		"luaideConfig": {},
 		"breakpoints": [
 			{
 				"language": "lua"
 			}
 		],
-		
 		"debuggers": [
 			{
 				"type": "lua",
@@ -56,21 +55,19 @@
 								"default": "Cocos2",
 								"description": "运行时类型",
 								"enum": [
-									
 									"Cocos2",
 									"Cocos3"
-									
 								]
 							},
-							"host":{
-								"type":"string",
+							"host": {
+								"type": "string",
 								"description": "调试器的地址(仅Lua51 内置有效)",
 								"default": "localhost"
 							},
-							"port":{
-								"type":"number",
+							"port": {
+								"type": "number",
 								"description": "调试器的端口",
-								"default":7003
+								"default": 7003
 							},
 							"mainFile": {
 								"type": "string",
@@ -82,8 +79,6 @@
 								"description": "--必填 当前文件目录 如果 运行程序支持 workdir 该参数当做 workdir进行传入",
 								"default": "${workspaceRoot}"
 							},
-							
-							
 							"scripts": {
 								"type": "array",
 								"default": [],
@@ -97,7 +92,6 @@
 								"description": "--必填 执行文件路径",
 								"default": ""
 							},
-						
 							"printType": {
 								"type": "number",
 								"default": 1,
@@ -108,15 +102,30 @@
 									3
 								]
 							},
-							"localRootDesc": {"type": "string"},
-							"mainFileDesc": {"type": "string"},
-							"portDesc": {"type": "string"},
-							"scriptsDesc":{"type": "string"},
-							"exePathDesc1": {"type": "string"},
-							"exePathDesc2": {"type": "string"},
-							"exePathDesc3": {"type": "string"},
-							"printTypeDesc": {"type": "string"}
-							
+							"localRootDesc": {
+								"type": "string"
+							},
+							"mainFileDesc": {
+								"type": "string"
+							},
+							"portDesc": {
+								"type": "string"
+							},
+							"scriptsDesc": {
+								"type": "string"
+							},
+							"exePathDesc1": {
+								"type": "string"
+							},
+							"exePathDesc2": {
+								"type": "string"
+							},
+							"exePathDesc3": {
+								"type": "string"
+							},
+							"printTypeDesc": {
+								"type": "string"
+							}
 						}
 					},
 					"attach": {
@@ -132,7 +141,6 @@
 								"default": "Cocos2",
 								"description": "运行时类型",
 								"enum": [
-									
 									"Cocos2",
 									"Cocos3",
 									"Unity"
@@ -161,38 +169,43 @@
 									3
 								]
 							},
-							
-							"port":{
-								"type":"number",
+							"port": {
+								"type": "number",
 								"description": "--必填 调试器的端口",
-								"default":7003
+								"default": 7003
 							},
-							"scriptsDesc":{"type": "string"},
-							"localRootDesc": {"type": "string"},
-							"portDesc": {"type": "string"},
-							"printTypeDesc": {"type": "string"}
+							"scriptsDesc": {
+								"type": "string"
+							},
+							"localRootDesc": {
+								"type": "string"
+							},
+							"portDesc": {
+								"type": "string"
+							},
+							"printTypeDesc": {
+								"type": "string"
+							}
 						}
 					}
 				},
-				
 				"initialConfigurations": [
-					
-					 {
+					{
 						"name": "Cocos2-launch",
 						"type": "lua",
 						"request": "launch",
 						"runtimeType": "Cocos2",
-                        "localRootDesc":"--必填 当前文件夹目录 如果 运行程序支持 workdir 该参数当做 workdir进行传入",
+						"localRootDesc": "--必填 当前文件夹目录 如果 运行程序支持 workdir 该参数当做 workdir进行传入",
 						"localRoot": "${workspaceRoot}",
-                        "mainFileDesc":"-- 先填 启动的lua 文件名 运行程序支持 workdir 当做 file 进行传入 不支持可不填",
+						"mainFileDesc": "-- 先填 启动的lua 文件名 运行程序支持 workdir 当做 file 进行传入 不支持可不填",
 						"mainFile": "src/main.lua",
-                        "portDesc":"--必填 调试器的端口 可修改 与调用LuaDebug 的端口对应",
-						"port":7003,
-                        "exePathDesc1":"--必填 执行文件路径",
-                        "exePathDesc2":"--必填 win-> ",
-                        "exePathDesc3":"--必填 mac ->/Users/k0204/Desktop/quickv3/quickv3 Mac.app/Contents/MacOS/quickv3 Mac",
-                        "exePath": "/Users/k0204/Desktop/quickv3/quickv3 Mac.app/Contents/MacOS/quickv3 Mac",
-						"printTypeDesc":"--必填 print打印方式 1 控制台和系统输出,2 控制台输出,3 系统输出",
+						"portDesc": "--必填 调试器的端口 可修改 与调用LuaDebug 的端口对应",
+						"port": 7003,
+						"exePathDesc1": "--必填 执行文件路径",
+						"exePathDesc2": "--必填 win-> ",
+						"exePathDesc3": "--必填 mac ->/Users/k0204/Desktop/quickv3/quickv3 Mac.app/Contents/MacOS/quickv3 Mac",
+						"exePath": "/Users/k0204/Desktop/quickv3/quickv3 Mac.app/Contents/MacOS/quickv3 Mac",
+						"printTypeDesc": "--必填 print打印方式 1 控制台和系统输出,2 控制台输出,3 系统输出",
 						"printType": 1
 					},
 					{
@@ -200,11 +213,11 @@
 						"type": "lua",
 						"request": "attach",
 						"runtimeType": "Cocos2",
-                        "localRootDesc":"--必填 当前文件夹目录",
+						"localRootDesc": "--必填 当前文件夹目录",
 						"localRoot": "${workspaceRoot}",
-                        "portDesc":"--必填 调试器的端口 可修改 与调用LuaDebug 的端口对应",
-						"port":7003,
-                        "printTypeDesc":"--必填 print打印方式 1 控制台和系统输出,2 控制台输出,3 系统输出",
+						"portDesc": "--必填 调试器的端口 可修改 与调用LuaDebug 的端口对应",
+						"port": 7003,
+						"printTypeDesc": "--必填 print打印方式 1 控制台和系统输出,2 控制台输出,3 系统输出",
 						"printType": 1
 					},
 					{
@@ -212,11 +225,11 @@
 						"type": "lua",
 						"request": "attach",
 						"runtimeType": "Unity",
-                        "localRootDesc":"--必填 当前文件夹目录 如果 运行程序支持 workdir 该参数当做 workdir进行传入",
+						"localRootDesc": "--必填 当前文件夹目录 如果 运行程序支持 workdir 该参数当做 workdir进行传入",
 						"localRoot": "${workspaceRoot}",
-                        "portDesc":"--必填 调试器的端口 可修改 与调用LuaDebug 的端口对应",
-						"port":7003,
-                        "printTypeDesc":"--必填 print打印方式 1 控制台和系统输出,2 控制台输出,3 系统输出",
+						"portDesc": "--必填 调试器的端口 可修改 与调用LuaDebug 的端口对应",
+						"port": 7003,
+						"printTypeDesc": "--必填 print打印方式 1 控制台和系统输出,2 控制台输出,3 系统输出",
 						"printType": 1
 					}
 				]
@@ -252,9 +265,19 @@
 			{
 				"command": "luaide.utils.LoadLuaScript",
 				"title": "执行lua加载lua字符串"
+			},
+			{
+				"command": "luaide.donate",
+				"title": "弹出捐献页面"
 			}
 		],
 		"menus": {
+			"explorer/context": [
+				{
+					"command": "luaide.utils.createTemplateFile",
+					"group": "luaide"
+				}
+			],
 			"editor/context": [
 				{
 					"command": "luaide.changecase.toUpperCase",
@@ -344,28 +367,51 @@
 				"luaide.isShowDest": {
 					"type": "boolean",
 					"default": false,
-					"description": "是否显示介绍"
+					"description": "是否显示介绍網頁"
+				},
+				"luaide.changeTextCheck": {
+					"type": "boolean",
+					"default": true,
+					"description": "代码修改时是否检查lua语法是否正确"
+				},
+				"luaide.moduleFunNestingCheck": {
+					"type": "boolean",
+					"default": false,
+					"description": "模块方法嵌套检查,如果在一个方法中出现另外一个模块方法会认为是错误的"
+				},
+				"luaide.scriptRoots": {
+					"type": "array",
+					"items": {
+						"type": "string"
+					},
+					"default": [],
+					"description": "lua代码文件夹根目录(可以设置多个目录),用以require 时提示路径"
+				},
+				"luaide.maxFileSize": {
+					"type": "number",
+					"default": 2048,
+					"description": "解析的lua文件最大文件大小,默认为2MB,超过此设置将不解析"
 				}
 				
 			}
 		}
 	},
-    "scripts": {
-        "vscode:prepublish": "tsc -p ./",
-        "compile": "tsc -watch -p ./",
-        "postinstall": "node ./node_modules/vscode/bin/install",
-        "test": "node ./node_modules/vscode/bin/test"
-    },
-    "devDependencies": {
-        "typescript": "^2.0.3",
-        "vscode": "^1.0.0",
-        "mocha": "^2.3.3",
-        "@types/node": "^6.0.40",
-        "@types/mocha": "^2.2.32",
-        "@types/socket.io": "^1.4.27",
+	"scripts": {
+		"vscode:prepublish": "tsc -p ./",
+		"compile": "tsc -watch -p ./",
+		"postinstall": "node ./node_modules/vscode/bin/install",
+		"test": "node ./node_modules/vscode/bin/test"
+	},
+	"devDependencies": {
+		"typescript": "^2.0.3",
+		"vscode": "^1.0.0",
+		"mocha": "^2.3.3",
+		"@types/node": "^6.0.40",
+		"@types/mocha": "^2.2.32",
+		"@types/socket.io": "^1.4.27",
 		"@types/socket.io-client": "^1.4.27"
-    },
-    "dependencies": {
+	},
+	"dependencies": {
 		"vscode-debugadapter": "^1.17.0",
 		"vscode-debugprotocol": "^1.17.0",
 		"vscode-languageclient": "^3.1.0"

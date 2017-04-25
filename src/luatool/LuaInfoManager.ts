@@ -28,20 +28,22 @@ export class LuaInfoManager {
     private initKeyWrodCompletioins() {
 
     }
+    public setFcim(uri: Uri, fcim: FileCompletionItemManager) {
+        this.fileCompletionItemManagers.set(uri.path, fcim);
+    }
     public getFcim(uri: Uri) {
         var fcim: FileCompletionItemManager = null;
         if (this.fileCompletionItemManagers.has(uri.path)) {
             fcim = this.fileCompletionItemManagers.get(uri.path)
-        } else {
-            fcim = new FileCompletionItemManager(uri);
-            this.fileCompletionItemManagers.set(uri.path, fcim);
         }
         return fcim;
     }
-    public init(lp: LuaParse, uri: Uri) {
+    public init(lp: LuaParse, uri: Uri, tempUri: Uri) {
         this.lp = lp;
         this.tokens = lp.tokens;
-        this.currentFcim = this.getFcim(uri);
+
+        this.currentFcim = new FileCompletionItemManager(tempUri);
+        this.fileCompletionItemManagers.set(uri.path, this.currentFcim);
         this.currentFcim.clear();
     }
     public addFunctionCompletionItem(luaInfo: LuaInfo, token: TokenInfo, functionEndToken: TokenInfo) {
@@ -66,10 +68,9 @@ export class LuaInfoManager {
         fcoitems.forEach(item => {
             if (key != null) {
                 key = key.toLocaleLowerCase()
-                // console.log("key:"+key)
             }
             if (key == "self") {
-
+                var xx = 1
             } else {
                 var items: Map<string, LuaFiledCompletionInfo> = item.items
 
@@ -106,12 +107,19 @@ export class LuaInfoManager {
 
         return functionCompletionItems;
     }
+
     public addGlogCompletionItems(items: Array<LuaFiledCompletionInfo>) {
         this.fileCompletionItemManagers.forEach((v, k) => {
-            items.push(v.luaGolbalCompletionInfo)
+            if (k != LuaParse.checkTempFilePath) {
+                items.push(v.luaGolbalCompletionInfo)
+            }
+
         })
         this.fileCompletionItemManagers.forEach((v, k) => {
-            items.push(v.luaFunCompletionInfo)
+            if (k != LuaParse.checkTempFilePath) {
+                items.push(v.luaFunCompletionInfo)
+            }
+
         })
     }
 
@@ -150,8 +158,9 @@ export class LuaInfoManager {
         var funNames: Array<string> = new Array<string>();
         var endCount = 0;
         var lastEndCount = 0;
-
+        var isBreak:boolean = false
         while (index >= 0) {
+            if(isBreak) break
             var token: TokenInfo = tokens[index]
             if (lp.consume('end', token, TokenTypes.Keyword)) {
                 index--;
@@ -208,9 +217,10 @@ export class LuaInfoManager {
                                 funName += nextToken.value;
                                 functionNameToken = tokens[findex];
                                 funName = funName + functionNameToken.value;
-
+                                isBreak = true
                             }
                             if (findex == starIndex) {
+                               
                                 break;
                             }
                         }
@@ -245,127 +255,107 @@ export class LuaInfoManager {
     public getFunctionArgs(tokens: Array<TokenInfo>, uri: Uri) {
         var fcim: FileCompletionItemManager = this.getFcim(uri)
         var funNames: Array<string> = this.getCurrentFunctionName(tokens, uri)
+        if (fcim == null) {
+            return [];
+        }
         return fcim.getSymbolArgsByNames(funNames)
 
 
     }
 
 
-    public getFunctionCompletionItems(uri: Uri, keyss: Array<Array<string>>):
+    public getFunctionCompletionItems(uri: Uri, keys: Array<string>):
         Array<LuaFiledCompletionInfo> {
         var completionItems: Array<LuaFiledCompletionInfo> = new Array<LuaFiledCompletionInfo>();
-        if (keyss == null || keyss.length == 0) return;
-        keyss.forEach(keys => {
-            var items: Array<LuaFiledCompletionInfo> = new Array<LuaFiledCompletionInfo>();
-            var fcoitems: Array<LuaFiledCompletionInfo> = new
-                Array<LuaFiledCompletionInfo>();
-            var fcim: FileCompletionItemManager = this.getFcim(uri)
-            fcoitems.push(fcim.luaFiledCompletionInfo)
-            this.addGlogCompletionItems(fcoitems)
-            this.getCompletionItemByKeyAndTopType(
-                keys[keys.length - 1], 0,
-                fcoitems,
-                items, keys.length == 1)
-            var index = 2;
-            while (true && keys.length > 1 ) {
-                CLog();
-                if (index > keys.length) {
-                    if(keys.length%2 == 0){
-                        var lasttKey: string = keys[1];
-                         
-                      
-                       items = this.getLastKeyCompletionItem(lasttKey, items)
-                    }
-                    
-                    break;
-                }
-                var tipType: number = keys[keys.length - index] == '.' ? 1 : 2;
-                index++;
-                var key: string = null;
-                if (keys.length - index >= 0) {
-                    key = keys[keys.length - index];
-                }
-                if (key == null) {
-                    continue;
-                }
-                index++;
-                var items1: Array<LuaFiledCompletionInfo> = new Array<LuaFiledCompletionInfo>();
-                items.forEach(element => {
-                    this.getCompletionItemByKeyAndTopType(key, tipType,
-                        [element], items1, index == keys.length - 1)
-                });
-                items = items1;
+        if (keys == null || keys.length == 0) return;
 
-                if (items1.length == 0) {
-                    //没找到那么就再找找
+        var items: Array<LuaFiledCompletionInfo> = new Array<LuaFiledCompletionInfo>();
+        var fcoitems: Array<LuaFiledCompletionInfo> = new
+            Array<LuaFiledCompletionInfo>();
+        var fcim: FileCompletionItemManager = this.getFcim(uri)
+        if (fcim == null) {
+            return completionItems
+        }
+        fcoitems.push(fcim.luaFiledCompletionInfo)
+        this.addGlogCompletionItems(fcoitems)
+        this.getCompletionItemByKeyAndTopType(
+            keys[keys.length - 1], 0,
+            fcoitems,
+            items, keys.length == 1)
+        var index = 2;
+        while (true && keys.length > 1) {
+            CLog();
+            if (index > keys.length) {
+                if (keys.length % 2 == 0) {
                     var lasttKey: string = keys[1];
-                    this.getLastKeyCompletionItem(lasttKey, items)
-                    break;
-                } else {
 
-                    continue;
+
+                    items = this.getLastKeyCompletionItem(lasttKey, items)
                 }
-            }
 
-            for (var index = 0; index < items.length; index++) {
-                var isadd: boolean = true;
-                var citem: LuaFiledCompletionInfo = items[index];
-                for (var index1 = 0; index1 < completionItems.length; index1++) {
-                    var citem1 = completionItems[index1];
-                    if (citem1.label == citem.label) {
-                        if (
-                            citem1.kind != CompletionItemKind.Function &&
-                            citem1.documentation == "" && citem.documentation != "") {
-                            completionItems[index1] = citem;
-                        }
-                        isadd = false;
-                        break;
+                break;
+            }
+            var tipType: number = keys[keys.length - index] == '.' ? 1 : 2;
+            index++;
+            var key: string = null;
+            if (keys.length - index >= 0) {
+                key = keys[keys.length - index];
+            }
+            if (key == null) {
+                continue;
+            }
+            index++;
+            var items1: Array<LuaFiledCompletionInfo> = new Array<LuaFiledCompletionInfo>();
+            items.forEach(element => {
+                this.getCompletionItemByKeyAndTopType(key, tipType,
+                    [element], items1, index == keys.length - 1)
+            });
+            items = items1;
+
+            if (items1.length == 0) {
+                //没找到那么就再找找
+                var lasttKey: string = keys[1];
+                this.getLastKeyCompletionItem(lasttKey, items)
+                break;
+            } else {
+
+                continue;
+            }
+        }
+
+        for (var index = 0; index < items.length; index++) {
+
+            var isadd: boolean = true;
+            var citem: LuaFiledCompletionInfo = items[index];
+            for (var index1 = 0; index1 < completionItems.length; index1++) {
+                var citem1 = completionItems[index1];
+                if (citem1.label == citem.label) {
+                    if (citem1.kind != CompletionItemKind.Function &&
+                        citem1.documentation == "" && citem.documentation != "") {
+                        completionItems[index1] = citem;
                     }
-
-                }
-                if (isadd) {
-                    completionItems.push(citem)
+                    isadd = false;
+                    break;
                 }
 
             }
-
-
-        });
-
-
+            if (isadd) {
+                completionItems.push(citem)
+            }
+        }
 
         return completionItems;
     }
 
-    public getLastKeyCompletionItem(lasttKey: string, items: Array<LuaFiledCompletionInfo>):Array<LuaFiledCompletionInfo> {
-        // if (lasttKey == null) return
-        // lasttKey = lasttKey.toLocaleLowerCase();
-        // if (lasttKey != "self") {
-        //     this.fileCompletionItemManagers.forEach((v, k) => {
-        //         v.luaGolbalCompletionInfo.lowerCaseItems.forEach((v1, k1) => {
-        //             if (lasttKey == k1) {
+    public getLastKeyCompletionItem(lasttKey: string, items: Array<LuaFiledCompletionInfo>): Array<LuaFiledCompletionInfo> {
 
-        //                 v1.items.forEach((v2, k2) => {
-        //                     items.push(v2)
-        //                 })
-        //             }
-        //         })
-        //         v.luaFunCompletionInfo.lowerCaseItems.forEach((v1, k1) => {
-        //             if (lasttKey == k1) {
-        //                 v1.items.forEach((v2, k2) => {
-        //                     items.push(v2)
-        //                 })
-        //             }
-        //         })
-        //     })
-        // }
         var items1: Array<LuaFiledCompletionInfo> = new Array<LuaFiledCompletionInfo>();
 
         items.forEach(element => {
-                element.items.forEach((v2, k2) => {
-                           items1.push( v2) 
-                        })
-          
+            element.items.forEach((v2, k2) => {
+                items1.push(v2)
+            })
+
         });
         return items1
     }

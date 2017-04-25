@@ -13,11 +13,12 @@ export class LuaFiledCompletionInfo extends CompletionItem {
     public comments: Array<LuaComment>;
     public uri:vscode.Uri;
     public position:vscode.Position;
-    
-    constructor(label:string,kind:CompletionItemKind,uri:vscode.Uri,position:vscode.Position)
+    public isFun:boolean;
+    constructor(label:string,kind:CompletionItemKind,uri:vscode.Uri,position:vscode.Position,isFun:boolean)
     {
        
         super(label,kind);
+        this.isFun = isFun
         this.isShow = true;
         this.documentation = ""
         this.items = new Map<string,LuaFiledCompletionInfo>();
@@ -25,6 +26,15 @@ export class LuaFiledCompletionInfo extends CompletionItem {
         this.type = new Array<number>();
         this.uri = uri;
         this.position = position;
+    }
+    public changeUri(uri:vscode.Uri)
+    {
+        this.uri = uri
+        if(this.items){
+            this.items.forEach(item=>{
+                item.changeUri(uri)
+            })
+        }
     }
     public checkType(t:number)
     {
@@ -72,6 +82,10 @@ export class LuaFiledCompletionInfo extends CompletionItem {
 
     public addItem(item:LuaFiledCompletionInfo)
     {
+        if(item.label == "self")
+        {
+            var xx = 1
+        }
         item.parent = this;
         this.items.set(item.label,item)
        

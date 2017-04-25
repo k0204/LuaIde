@@ -19,7 +19,7 @@ export class BaseChildProcess {
     }
 
     public execLua(): child_process.ChildProcess {
-        // var extensionPath = vscode.extensions.getExtension("kangping.luaide").extensionPath
+        
         //判断平台
         //linux
         //darwin

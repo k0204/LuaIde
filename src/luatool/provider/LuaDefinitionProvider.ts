@@ -243,7 +243,7 @@ function getLocation(keyNames: Array<string>, luaManager: LuaInfoManager, type: 
     var location: vscode.Location = null
     
     luaManager.fileCompletionItemManagers.forEach((v, k) => {
-       
+       if(k != LuaParse.checkTempFilePath){
         var tempInfo: LuaFiledCompletionInfo = null;
         if (type == 1) {
             tempInfo = v.luaFunCompletionInfo;//.getItemByKey(key,true)
@@ -256,6 +256,7 @@ function getLocation(keyNames: Array<string>, luaManager: LuaInfoManager, type: 
             findInfos.push(findInfo)
             // location = new vscode.Location(findInfo.uri, findInfo.position)
             // return
+        }
         }
     })
     //    var fInfo: LuaFiledCompletionInfo;

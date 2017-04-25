@@ -8,7 +8,7 @@ var path = require('path');
  * 创建模板文件
  */
 export class CreateTemplateFile {
-    public static run() {
+    public static run(e) {
 
         var templateManager: TemplateManager = ExtensionManager.em.templateManager
 
@@ -22,7 +22,7 @@ export class CreateTemplateFile {
                         return;
                     }
 
-                    CreateTemplateFile.showInputBox(templateManager, selection)
+                    CreateTemplateFile.showInputBox(templateManager, selection,e)
                 });
 
             } else {
@@ -32,25 +32,29 @@ export class CreateTemplateFile {
 
 
     }
-    public static showInputBox(templateManager, selection) {
+    public static showInputBox(templateManager, selection,e) {
         // ask for filename
         var inputOptions = {
-            prompt: "输入要创建的名字",
+            prompt: "请输入文件名",
             value: selection,
         };
         vscode.window.showInputBox(inputOptions).then(function (filename) {
             if (filename == "") {
-                CreateTemplateFile.showInputBox(templateManager, selection)
+                CreateTemplateFile.showInputBox(templateManager, selection,e)
                 return
             } else {
                 var fileContents = templateManager.getTemplate(selection);
+               var templateFile = ""
+                if(e != null && e.fsPath != null){
+                     templateFile = e.fsPath
+                }else
+                {
+                         //找到需要创建文件的路径
+                    var editor: vscode.TextEditor = vscode.window.activeTextEditor;
 
-
-
-                //找到需要创建文件的路径
-                var editor: vscode.TextEditor = vscode.window.activeTextEditor;
-
-                var templateFile = path.dirname(editor.document.uri.fsPath)
+                    templateFile = path.dirname(path)
+                   
+                }
                 //判断有没有.lua 后缀 如果没有添加
                 var lastIndex: number = filename.lastIndexOf(".lua")
                 if (lastIndex != filename.length - 4) {

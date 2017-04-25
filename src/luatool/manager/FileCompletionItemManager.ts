@@ -19,12 +19,14 @@ export class FileCompletionItemManager {
     public lp: LuaParse;
     public constructor(uri: Uri) {
         this.uri = uri;
-        this.luaFunCompletionInfo = new LuaFiledCompletionInfo("", CompletionItemKind.Class, uri, null);
-        this.luaFiledCompletionInfo = new LuaFiledCompletionInfo("", CompletionItemKind.Class, uri, null);
-        this.luaGolbalCompletionInfo = new LuaFiledCompletionInfo("", CompletionItemKind.Class, uri, null);
+        this.luaFunCompletionInfo = new LuaFiledCompletionInfo("", CompletionItemKind.Class, uri, null,false);
+        this.luaFiledCompletionInfo = new LuaFiledCompletionInfo("", CompletionItemKind.Class, uri, null,false);
+        this.luaGolbalCompletionInfo = new LuaFiledCompletionInfo("", CompletionItemKind.Class, uri, null,false);
         this.symbols = new Array<LuaSymbolInformation>();
 
     }
+    
+
     public clear() {
         this.luaFiledCompletionInfo.items.clear();
         this.luaFiledCompletionInfo.lowerCaseItems.clear();
@@ -34,24 +36,7 @@ export class FileCompletionItemManager {
         this.luaGolbalCompletionInfo.lowerCaseItems.clear();
         this.symbols = new Array<LuaSymbolInformation>();
     }
-    /**
-     * 将self 中的变量放入root 节点中
-     */
-    public selfToGolbal() {
-        this.tokens = null
-        //    var item:LuaFiledCompletionInfo =  this.luaFiledCompletionInfo.getItemByKey("self")
-        //    if(item){
-        //        item.items.forEach((v,k)=>{
 
-        //            getSelfToModuleName(this.lp.tokens,this.lp)
-        //        if(! this.luaGolbalCompletionInfo.getItemByKey(k)){
-        //         //    getTokens(this.lp.)
-        //            this.luaGolbalCompletionInfo.addItem(v);
-        //        }
-        //    })
-        //    }
-
-    }
     public addFunctionCompletion(
         lp: LuaParse,
         luaInfo: LuaInfo,
@@ -243,14 +228,21 @@ export class FileCompletionItemManager {
                 var completion: LuaFiledCompletionInfo = startInfo.getItemByKey(infos[i].key)
                 if (completion == null) {
 
-                    completion = new LuaFiledCompletionInfo(infos[i].key, infos[i].kind, lp.currentUri, infos[i].position)
+                    completion = new LuaFiledCompletionInfo(infos[i].key, infos[i].kind, lp.tempUri, infos[i].position,isFun)
                     startInfo.addItem(completion)
                     completion.isShow = infos[i].isShow;
                     // completion.textEdit.newText = infos[i].insterStr;
-                    completion.documentation = infos[i].desc;
+                    if(isFun){
+                        completion.documentation = getFirstComments(infos[i].comments)
+                    }
+                    else
+                    {
+                        completion.documentation = infos[i].desc;
+                    }
                     completion.comments = infos[i].comments
+                    
                 } else {
-                    if (infos[i].desc) {
+                    if (infos[i].desc && completion.isFun == false) {
                         completion.documentation = infos[i].desc
                     }
                 }
@@ -260,7 +252,7 @@ export class FileCompletionItemManager {
 
                     var nextCompletion: LuaFiledCompletionInfo = completion.getItemByKey(nextInfo.key)
                     if (nextCompletion == null) {
-                        nextCompletion = new LuaFiledCompletionInfo(nextInfo.key, nextInfo.kind, lp.currentUri, nextInfo.position);
+                        nextCompletion = new LuaFiledCompletionInfo(nextInfo.key, nextInfo.kind, lp.tempUri, nextInfo.position,isFun);
                         nextCompletion.setType(1)
                         nextCompletion.isShow = nextInfo.isShow;
                         // nextCompletion.textEdit.newText = nextInfo.insterStr;
@@ -276,7 +268,7 @@ export class FileCompletionItemManager {
                         var aliasCompletion: LuaFiledCompletionInfo =
                             startInfo.getItemByKey(aliasInfo.key)
                         if (aliasCompletion == null) {
-                            aliasCompletion = new LuaFiledCompletionInfo(aliasInfo.key, aliasInfo.kind, lp.currentUri, aliasInfo.position)
+                            aliasCompletion = new LuaFiledCompletionInfo(aliasInfo.key, aliasInfo.kind, lp.tempUri, aliasInfo.position,isFun)
                             startInfo.addItem(aliasCompletion)
                             aliasCompletion.documentation = infos[i].desc;
                             aliasCompletion.isShow = aliasInfo.isShow;
@@ -311,9 +303,9 @@ export class FileCompletionItemManager {
                 // startInfo.label += paramsstr;
             })
         }
-        this.addTableFileds(luaInfo,startInfos,lp);
+        this.addTableFileds(luaInfo,startInfos,lp,isFun);
     }
-    private addTableFileds(luaInfo:LuaInfo,startInfos: Array<LuaFiledCompletionInfo>,lp: LuaParse)
+    private addTableFileds(luaInfo:LuaInfo,startInfos: Array<LuaFiledCompletionInfo>,lp: LuaParse,isFun:boolean)
     {
         //判断 luaInfo 
         if (luaInfo.tableFileds && luaInfo.tableFileds.length) {
@@ -323,22 +315,22 @@ export class FileCompletionItemManager {
                     if (!startInfo.getItemByKey(filed.name)) {
                         if (filed.tableFiledType == 0) {
                             var completion: LuaFiledCompletionInfo = new LuaFiledCompletionInfo(
-                                filed.name, CompletionItemKind.Field, lp.currentUri,
-                                new vscode.Position(filed.endToken.line, filed.endToken.lineStart));
+                                filed.name, CompletionItemKind.Field, lp.tempUri,
+                                new vscode.Position(filed.endToken.line, filed.endToken.lineStart),isFun);
                             startInfo.addItem(completion)
                             completion.setType(1)
-                            this.addTableFileds(filed,[completion],lp)
+                            this.addTableFileds(filed,[completion],lp,isFun)
                         } else {
                             var completion: LuaFiledCompletionInfo = new LuaFiledCompletionInfo(
                                 startInfo.label + filed.name,
-                                CompletionItemKind.Field, lp.currentUri, new vscode.Position(filed.startToken.line, filed.startToken.lineStart));
+                                CompletionItemKind.Field, lp.tempUri, new vscode.Position(filed.startToken.line, filed.startToken.lineStart),isFun);
                             startInfo.parent.addItem(completion)
                             if (startInfo.parent == this.luaFiledCompletionInfo) {
                                 completion.setType(0)
                             } else {
                                 completion.setType(1)
                             }
-                           this.addTableFileds(filed,[completion],lp)
+                           this.addTableFileds(filed,[completion],lp,isFun)
                         }
                     }
                 })

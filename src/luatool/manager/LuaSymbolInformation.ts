@@ -8,14 +8,16 @@ export class LuaSymbolInformation extends vscode.SymbolInformation
     public argLuaFiledCompleteInfos:Array<LuaFiledCompletionInfo>;
     private uri_:vscode.Uri;
     private range_:vscode.Range;
+    public parent:LuaSymbolInformation;
     constructor(name: string, kind: vscode.SymbolKind, range: vscode.Range, uri?: vscode.Uri, containerName?: string)
     {
         
-        super(name,kind,range,uri,containerName);
+       super(name,kind,range,uri,containerName);
         this.uri_ = uri;
         this.range_ = range;
     
     }
+
 
     public initArgs(args:Array<string>,comments: Array<LuaComment>)
     {
@@ -25,7 +27,19 @@ export class LuaSymbolInformation extends vscode.SymbolInformation
             for (var i = 0; i < args.length; i++) {
                 var element = args[i];
                 var completion:LuaFiledCompletionInfo = new LuaFiledCompletionInfo(element, 
-                vscode.CompletionItemKind.Variable,this.uri_,this.range_.start)   
+                vscode.CompletionItemKind.Variable,this.uri_,this.range_.start,false) 
+                if(comments)  {
+                for (var index = 0; index < comments.length; index++) {
+                    var comment:LuaComment = comments[index];
+
+                    var argComment = "@"+element+":";
+                    var cindex:number = comment.content.indexOf(argComment)
+                    if(cindex > -1){
+                        completion.documentation = comment.content.substring(cindex+argComment.length).trim()
+                        break
+                    }
+                }
+                }
                 this.argLuaFiledCompleteInfos.push(completion) 
             }
             

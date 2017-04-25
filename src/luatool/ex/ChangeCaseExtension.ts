@@ -1,12 +1,12 @@
 import vscode = require('vscode');
 
-export function toUpperCase()
+export function toUpperCase(e)
 {
     runChangeCase(function(txt:string){
         return txt.toUpperCase()
     })
 }
-export function toLowerCase()
+export function toLowerCase(e)
 {
     runChangeCase(function(txt:string){
         return txt.toLowerCase()

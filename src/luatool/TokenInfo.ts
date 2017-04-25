@@ -18,7 +18,7 @@ export class LuaInfo {
     public name: string;
     public aliasName: string = null;// 别名
     public parent: LuaInfo;
-
+    public isPointFun:boolean = false
 
     /**是否是多变量 */
     public ismultipleVariables: boolean = false

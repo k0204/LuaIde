@@ -4,13 +4,14 @@
  *--------------------------------------------------------------------------------------------*/
 
 'use strict';
-import {LuaParse} from '../LuaParse'
-import {  LuaInfo, TokenInfo, TokenTypes, LuaComment, LuaRange, LuaErrorEnum, LuaError, LuaInfoType} from '../TokenInfo';
+import { LuaParse } from '../LuaParse'
+import { LuaInfo, TokenInfo, TokenTypes, LuaComment, LuaRange, LuaErrorEnum, LuaError, LuaInfoType } from '../TokenInfo';
 import { languages, window, commands, SignatureHelpProvider, SignatureHelp, SignatureInformation, ParameterInformation, TextDocument, Position, Range, CancellationToken } from 'vscode';
 
-import {FileCompletionItemManager} from "../manager/FileCompletionItemManager"
-import {LuaFiledCompletionInfo} from './LuaFiledCompletionInfo'
-import {CLog,getParamComment,getSelfToModuleName,getTokens,getFirstComments} from '../Utils'
+import { FileCompletionItemManager } from "../manager/FileCompletionItemManager"
+import { LuaFiledCompletionInfo } from './LuaFiledCompletionInfo'
+import { CLog, getParamComment, getSelfToModuleName, getTokens, getFirstComments } from '../Utils'
+import { LuaSymbolInformation } from "../manager/LuaSymbolInformation";
 export class LuaSignatureHelpProvider implements SignatureHelpProvider {
 
 	public provideSignatureHelp(document: TextDocument, position: Position, token: CancellationToken): Promise<SignatureHelp> {
@@ -18,25 +19,32 @@ export class LuaSignatureHelpProvider implements SignatureHelpProvider {
 		let result: SignatureHelp = this.walkBackwardsToBeginningOfCall(document, position);
 
 		return Promise.resolve(result)
-        //需要判断参数是否为一个function  如果为 function  那么  直接退出 不做返回
 
-		// let text = "updateBufferTxtImage(  parentNode,animationItem,resourceID,animationHandler)";
-		// let nameEnd = text.indexOf(' ');
-		// let sigStart = nameEnd + 5; // ' func'
-		// let funcName = text.substring(0, nameEnd);
-		// let sig = text.substring(sigStart);
-		// let si = new SignatureInformation(funcName + sig, "简单介绍");
-		// si.parameters = []
-		// si.parameters.push(new ParameterInformation("parentNode"))
-		// si.parameters.push(new ParameterInformation("animationItem"))
-		// si.parameters.push(new ParameterInformation("resourceID"))
-		// si.parameters.push(new ParameterInformation("animationHandler"))
-		// result.signatures = [si];
-		// result.activeSignature = 0;
-		// result.activeParameter = 1
-		// return Promise.resolve(result);
 	}
-
+	private createSignatureInformation(symbol:LuaSymbolInformation,cIdex:number,funName:string)
+	{
+		let result = new SignatureHelp();
+		//拼接方法名字
+		let si = new SignatureInformation(funName, symbol.containerName);
+		si.parameters = []
+		var pstr = "("
+		symbol.argLuaFiledCompleteInfos.forEach(arg => {
+			si.parameters.push(new ParameterInformation(arg.label, arg.documentation))
+			pstr += arg.label + ",";
+		})
+		if(pstr != "(") {
+			pstr = pstr.substr(0, pstr.length - 1);
+		}
+		
+		pstr += ")"
+		si.label = si.label + pstr
+		// console.log("si.label:" + si.label)
+		result.signatures = [si];
+		result.activeSignature = 0;
+		result.activeParameter = cIdex
+		return result
+						
+	}
 
 
 	private walkBackwardsToBeginningOfCall(document: TextDocument, position: Position): SignatureHelp {
@@ -45,7 +53,7 @@ export class LuaSignatureHelpProvider implements SignatureHelpProvider {
 		var index: number = tokens.length - 1;
 		var count: number = 0;
 		var cIdex: number = 0;
-		let signature:SignatureHelp = null;
+		let signature: SignatureHelp = null;
 		while (true) {
 			CLog();
 			if (index < 0) {
@@ -69,8 +77,8 @@ export class LuaSignatureHelpProvider implements SignatureHelpProvider {
 					CLog();
 					var ktoken: TokenInfo = tokens[index]
 					if (lp.consume('then', ktoken, TokenTypes.Keyword) ||
-						lp.consume('do', ktoken, TokenTypes.Keyword) 
-						
+						lp.consume('do', ktoken, TokenTypes.Keyword)
+
 					) {
 						break;
 					}
@@ -118,71 +126,60 @@ export class LuaSignatureHelpProvider implements SignatureHelpProvider {
 					break;
 				}
 			}
-			
-			var key: string = keys[keys.length-1]
+			if(keys.length == 1){
+				//检查是不是内部方法
+				var fcim: FileCompletionItemManager = lp.luaInfoManager.getFcim(document.uri)
+				var curFunFcim:LuaSymbolInformation = null
+				for (var kindex = 0; kindex < fcim.symbols.length; kindex++) {
+					var element = fcim.symbols[kindex];
+					//找到当前所在方法
+					if(element.location.range.start.line <= position.line &&
+					element.location.range.end.line >= position.line){
+						curFunFcim = element
+					}
+				}
+				if(curFunFcim != null){
+					for (var index = 0; index < fcim.symbols.length; index++) {
+						var element = fcim.symbols[index];
+						if(element.name.indexOf(curFunFcim.name+"->"+keys[0]) > -1){
+							signature = this.createSignatureInformation(element,cIdex,keys[0])
+							break
+						}
+					}
+				}
+			}
+			if(signature != null){
+				return signature
+			} 
+			var key: string = keys[keys.length - 1]
 			if (key == "self") {
 				var moduleName = getSelfToModuleName(tokens, lp)
 				if (moduleName == null) {
 					return
 				} else {
+					keys[keys.length - 1] = moduleName
 					key = moduleName;
 				}
 			}
-			
+			var funName: string = ""
+			for (var kindex = keys.length - 1; kindex >= 0; kindex--) {
+
+				funName += keys[kindex]
+			}
 			lp.luaInfoManager.fileCompletionItemManagers.forEach((v, k) => {
-				var luaFunCompletionInfo: LuaFiledCompletionInfo = v.luaFunCompletionInfo
-				//找方法
-				index = keys.length-1
-				while (true) {
-					CLog();
-					
-					var lfci: LuaFiledCompletionInfo = luaFunCompletionInfo.getItemByKey(key)
-				
-					
-					if (lfci != null) {
-						luaFunCompletionInfo = lfci;
-						index--;
-						var pkey: string = keys[index]
-						index--;
-						key = keys[index]
-					}else
-					{
-						break;
-					}
-					if (index < 0) {
-						break;
-					}
-				}
-				if (luaFunCompletionInfo != null && luaFunCompletionInfo != v.luaFunCompletionInfo) {
-					//找到了
-					let result = new SignatureHelp();
-					let si = new SignatureInformation(luaFunCompletionInfo.label, getFirstComments(luaFunCompletionInfo.comments));
-					si.parameters = []
-					var pstr = "("
-					if (luaFunCompletionInfo.params) {
-						luaFunCompletionInfo.params.forEach(param => {
-							pstr += param + ",";
-							si.parameters.push(new ParameterInformation(param, getParamComment(param, luaFunCompletionInfo.comments)))
-						})
-						pstr = pstr.substr(0, pstr.length - 1);
+				for (var index = 0; index < v.symbols.length; index++) {
+					var element = v.symbols[index];
+					if (element.name == funName) {
+						signature = this.createSignatureInformation(element,cIdex,element.name)
+						return
 					}
 
-					pstr += ")"
-					si.label = si.label + pstr
-					// console.log("si.label:" + si.label)
-					result.signatures = [si];
-					result.activeSignature = 0;
-					result.activeParameter = cIdex
-
-					// console.log("找到了")
-					signature = result 
-					return
-				} else {
-					//没找到
-					// console.log("没到了")
 				}
 			})
 		}
 		return signature
+		
+
+
 	}
 }

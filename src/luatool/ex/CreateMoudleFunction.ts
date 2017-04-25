@@ -6,7 +6,7 @@ import { ExtensionManager } from '../ex/ExtensionManager'
 import { getFunctionParameter } from '../ex/Template/FunctionParameter'
 
 import { LuaInfo, TokenInfo, TokenTypes, LuaComment, LuaRange, LuaErrorEnum, LuaError, LuaInfoType } from '../TokenInfo';
-export function createModuleFunction() {
+export function createModuleFunction(e) {
     var editor = vscode.window.activeTextEditor;
     var functionName: string = editor.document.getText(editor.selection)
     if (functionName == null || functionName == "") {
@@ -92,7 +92,13 @@ function inputFunctionName(editor: vscode.TextEditor, tokens: Array<TokenInfo>, 
             }
             paramStr = paramStr.substring(0, paramStr.length - 2)
             paramDescStr = paramDescStr.substring(0, paramDescStr.length - 2)
-            insterText = insterText.replace(new RegExp("{paramdesc}", "gm"), paramDescStr)
+             if(paramDescStr == ""){
+               
+                insterText = insterText.replace("{paramdesc}\r\n","")
+            }else
+            {
+                insterText = insterText.replace(new RegExp("{paramdesc}", "gm"), paramDescStr)
+            }
             insterText = insterText.replace(new RegExp("{param}", "gm"), paramStr)
             edit.insert(position,
                 "\r\n" + insterText + "\r\n")

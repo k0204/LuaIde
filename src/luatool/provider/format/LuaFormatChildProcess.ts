@@ -1,10 +1,11 @@
 import child_process = require('child_process');
 import vscode = require('vscode');
+import { ExtensionManager } from '../../ex/ExtensionManager'
 var fs = require('fs');
 var path = require('path');
 var os = require('os');
 export function LuaFormat(str): string {
-    var extensionPath = vscode.extensions.getExtension("kangping.luaide").extensionPath
+    var extensionPath = ExtensionManager.em.luaIdeConfigManager.extensionPath
     var rootPath = path.join(extensionPath, "runtime", "win");
     var exePath = path.join(rootPath, "lua.exe");
     var scriptPath = path.join(rootPath, "temp.lua");

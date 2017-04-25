@@ -26,7 +26,24 @@ export class ProviderUtils {
         }
         return tokens;
     }
-
+    public static getTokenByText(text:string){
+         var lpt: LuaParseTool = LuaParse.lp.lpt;
+        var tokens: Array<TokenInfo> = new Array<TokenInfo>();
+        lpt.Reset(text)
+        while (true) {
+            CLog();
+            var token: TokenInfo = lpt.lex();
+            if (token.error != null) {
+                return;
+            }
+            if (token.type == TokenTypes.EOF) {
+                break;
+            }
+            token.index = tokens.length;
+            tokens.push(token);
+        }
+        return tokens;
+    }
     public static getComments(comments: Array<LuaComment>): string {
         if (comments == null) return "";
         var commentStr: string = "";
@@ -54,7 +71,7 @@ export class ProviderUtils {
             var comment = comments[i].content
             var index = comment.trim().indexOf("==");
             if (index == 0) { continue }
-            if (comment.indexOf("@desc") > -1) {
+            if (comment.indexOf("@desc:") > -1) {
                 commentStr = comment;
                 break;
             } else if (commentStr == null) {

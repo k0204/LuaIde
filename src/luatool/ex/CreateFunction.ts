@@ -8,7 +8,7 @@ import { getFunctionParameter } from '../ex/Template/FunctionParameter'
 
 import { LuaInfo, TokenInfo, TokenTypes, LuaComment, LuaRange, LuaErrorEnum, LuaError, LuaInfoType } from '../TokenInfo';
 
-export function createFunction() {
+export function createFunction(e) {
 
     var editor = vscode.window.activeTextEditor;
     var functionName: string = editor.document.getText(editor.selection)
@@ -75,7 +75,8 @@ export function createFunction() {
             insterText = insterText + "\r\n";
             var insterTexts: Array<string> = insterText.split("\r\n")
             var lineText = ""
-            for (var j = 0; j < Math.floor(startCount / 4); j++) {
+            var tabCount = Math.ceil(startCount / 4)
+            for (var j = 0; j < tabCount; j++) {
                 if (insterTexts[i] != "") {
                     lineText += "\t"
                 }
@@ -83,11 +84,11 @@ export function createFunction() {
             for (var i = 0; i < insterTexts.length; i++) {
 
                 if (insterTexts[i] != "{paramdesc}") {
-                    insterTexts[i] = lineText + insterTexts[i]
+                    insterTexts[i] = lineText + insterTexts[i].trim()
                 }
 
             }
-            insterText = "";
+            insterText = "\r\n";
             var j = 0;
             for (var i = 0; i < insterTexts.length; i++) {
                 if (insterTexts[i] != "") {
@@ -99,8 +100,7 @@ export function createFunction() {
                     j++;
                 }
             }
-            insterText += "\r\n"
-
+           
             var paramDescStr: string = ""
             var paramStr: string = ""
             for (var index = 0; index < args.length; index++) {
@@ -111,9 +111,16 @@ export function createFunction() {
             paramStr = paramStr.substring(0, paramStr.length - 2)
             paramDescStr = paramDescStr.substring(0, paramDescStr.length - 2)
 
-
-            insterText = insterText.replace(new RegExp("{paramdesc}", "gm"), paramDescStr)
+            if(paramDescStr == ""){
+               
+                insterText = insterText.replace("{paramdesc}\r\n","")
+            }else
+            {
+                insterText = insterText.replace(new RegExp("{paramdesc}", "gm"), paramDescStr)
+            }
+          
             insterText = insterText.replace(new RegExp("{param}", "gm"), paramStr)
+            
             edit.insert(position, insterText)
 
         });

@@ -593,7 +593,7 @@ LuaDebugger.event = {
 	C2S_LoadLuaScript = 18,
 	C2S_DebugXpCall = 20,
 }
-function print(...)
+function print1(...)
 	if(LuaDebugger.isProntToConsole == 1 or LuaDebugger.isProntToConsole == 3) then
 		debugger_print(...)
 	end
@@ -643,7 +643,7 @@ local function debugger_dump(value, desciption, nesting)
 		return tostring(v)
 	end
 	local traceback = debugger_strSplit(debug.traceback("", 2), "\n")
-	print("dump from: " .. debugger_strTrim(traceback[3]))
+	print1("dump from: " .. debugger_strTrim(traceback[3]))
 	local function _dump(value, desciption, indent, nest, keylen)
 		desciption = desciption or "<var>"
 		spc = ""
@@ -687,7 +687,7 @@ local function debugger_dump(value, desciption, nesting)
 	end
 	_dump(value, desciption, "- ", 1)
 	for i, line in ipairs(result) do
-		print(line)
+		print1(line)
 	end
 end
 local function ToBase64(source_str)

@@ -78,44 +78,14 @@ export class LuaFunctionParse {
         }
         else {
             if (this.lp.isError) return;
-            this.lp.setError(this.lp.getCurrentToken(null), "function 未结束" + luaInfo.name)
+            var  currerntToken = this.lp.getCurrentToken(null)
+            if(currerntToken== null){
+                currerntToken = this.lp.getLastToken()
+            }
+            this.lp.setError(currerntToken, "function 未结束",luaInfo.startToken)
             return false
         }
-        // while (true) {
-        //     if (this.lp.tokenIndex < this.lp.tokensLength) {
-        //         //检查是否有return 
-        //         if(this.lp.luaCheckReturn.check(luaInfo))
-        //         {
-        //             return true
-        //         }else
-        //         {
-        //             if(this.lp.isError)return false
-        //         }
-        //         if (this.lp.setLuaInfo(luaInfo)) {
-
-        //             var nextToken = this.lp.getNextToken("function 未完成");
-        //             if(nextToken == null) return false;
-        //             if (this.lp.consume('end', nextToken, TokenTypes.Keyword)) return true
-        //                 continue;
-
-        //         } else {
-        //             //检查是否未 字符
-        //             if (this.lp.isError) {
-        //                 return false
-        //             } else {
-        //                 this.lp.setError(this.lp.getCurrentToken( null),"未知的方法错误,注意处理检查逻辑 ");
-        //                 // if (this.lp.consume('end', this.lp.getCurrentToken( null), TokenTypes.Keyword)) return true
-        //                 return false;
-        //             }
-
-        //         }
-        //     } else {
-
-
-        //         this.lp.setError(this.lp.getTokenByIndex(this.lp.tokenIndex - 1, null), "方法未完成")
-        //         return false
-        //     }
-        // }
+        
     }
 
     /**
@@ -124,14 +94,14 @@ export class LuaFunctionParse {
     public setFunctionParam(luaInfo: LuaInfo) {
         // console.log("解析 方法参数 中...")
         //判断是否为 '('
-        var bracketToken = this.lp.getNextToken("方法未完成")
+        var bracketToken = this.lp.getNextToken("function 未结束")
         if (bracketToken === null) return false
         if (!this.lp.consume('(', bracketToken, TokenTypes.Punctuator)) {
             this.lp.setError(bracketToken, "意外的字符")
             return false
         }
 
-        var bracketToken = this.lp.getNextToken("方法未完成")
+        var bracketToken = this.lp.getNextToken("function 未结束")
         if (bracketToken === null) return false
         //判断是不是没有参数 
         if (this.lp.consume(')', bracketToken, TokenTypes.Punctuator)) {
@@ -146,7 +116,7 @@ export class LuaFunctionParse {
             CLog();
             if (!isFist) {
                 //检查逗号
-                var commaToken = this.lp.getTokenByIndex(this.lp.tokenIndex + 1, "方法未完成");// this.getNextToken("方法未完成")
+                var commaToken = this.lp.getTokenByIndex(this.lp.tokenIndex + 1, "function 未结束");// this.getNextToken("方法未完成")
                 if (commaToken == null) return false;
                 if (!this.lp.consume(',', commaToken, TokenTypes.Punctuator)) {
                     this.lp.setError(commaToken, "应该为 ','")
@@ -164,9 +134,10 @@ export class LuaFunctionParse {
                 //     var pluaInfo:LuaInfo = new LuaInfo(paramToken);
                 //     pluaInfo.setEndToken(paramToken)
                 // }
+                var index = luaInfo.addParam(paramToken.value)
                 if(ExtensionManager.em.luaIdeConfigManager.luaFunArgCheck)
                 {
-                    var index = luaInfo.addParam(paramToken.value)
+                    
                     if (index > -1) {
                         this.lp.setError(paramToken, "方法参数:'"+ paramToken.value + "'在第" + index + " 个参数已经存在")
                         return false;
@@ -174,7 +145,7 @@ export class LuaFunctionParse {
                 }
                 
                 //判断有没有结束
-                if (this.lp.consume(')', this.lp.getTokenByIndex(this.lp.tokenIndex + 1, "方法未完成"), TokenTypes.Punctuator)) {
+                if (this.lp.consume(')', this.lp.getTokenByIndex(this.lp.tokenIndex + 1, "function 未结束"), TokenTypes.Punctuator)) {
                     this.lp.tokenIndex++;
                     return true;
                 }

@@ -18,8 +18,8 @@ import {LuaWhileLogic} from './LuaWhileLogic'
 import {LuaForLogic} from './LuaForLogic'
 import {CLog} from './Utils'
 import {FunctionCall} from './FunctionCall'
-
-
+import { FileCompletionItemManager, CompletionItemSimpleInfo } from "./manager/FileCompletionItemManager"
+import { ExtensionManager } from './ex/ExtensionManager'
 import {LuaCheckReturn} from './LuaCheckReturn'
 import {LuaLeftCheck} from './LuaLeftCheck'
 import {LuaCheckUnary} from './LuaCheckUnary'
@@ -33,7 +33,7 @@ import {LuaValidateBracket_M} from './LuaValidateBracket_M'
 import {LuaFuncitonCheck} from './LuaFuncitonCheck'
 import {LuaCheckRepeat} from './LuaCheckRepeat'
 import {LuaCheckDoEnd} from './LuaCheckDoEnd'
-
+import * as path from 'path';
 import vscode = require('vscode');
 
 
@@ -67,16 +67,18 @@ export class LuaParse {
   public luaSetValue: LuaSetValue;
   public luaValidateBracket_M: LuaValidateBracket_M;
   public luaFuncitonCheck: LuaFuncitonCheck;
-  public static filePath:string;
+  private isSaveCompletion:boolean;
   public diagnosticCollection: vscode.DiagnosticCollection;
   public luaCheckRepeat:LuaCheckRepeat;
   public luaCheckDoEnd:LuaCheckDoEnd;
   public currentUri:vscode.Uri;
+  public tempUri:vscode.Uri;
   public errorFilePaths:Array<vscode.Uri>;
-  public isCheckAllError:Boolean;
+ 
   //判断变量是不是全局的
   public currentfunctionCount:number = 0;
   public currentFunctionNames:Array<string>;
+  public static checkTempFilePath:string;
   constructor(diagnosticCollection:vscode.DiagnosticCollection) {
     LuaParse.lp = this;
     this.errorFilePaths = new Array<vscode.Uri>();
@@ -103,17 +105,22 @@ export class LuaParse {
     this.luaValidateBracket_M = new LuaValidateBracket_M(this)
     this.luaFuncitonCheck = new LuaFuncitonCheck(this);
     this.luaCheckDoEnd = new LuaCheckDoEnd(this)
+   
+      var tempFile = path.join(ExtensionManager.em.luaIdeConfigManager.extensionPath,"runtime","parseTemFile")
+    this.currentUri =  vscode.Uri.parse(tempFile)
+    LuaParse.checkTempFilePath = tempFile
   }
 
   //传入的需要解析的代码
-  public Parse(uri:vscode.Uri, text:string,isCheckAllError:boolean= false): any {
+  public Parse(uri:vscode.Uri, text:string,isSaveCompletion:boolean= true): any {
+    this.isSaveCompletion = isSaveCompletion
+    this.tempUri = uri
     this.currentfunctionCount =0 
     this.currentFunctionNames = new Array<string>();
-    this.isCheckAllError = isCheckAllError;
-    this.currentUri = uri;
+   
     this.rootLuaInfo = new LuaInfo(null);
     this.rootLuaInfo.type = LuaInfoType.ROOT
-    LuaParse.filePath = uri.path;
+   
     this.lpt.Reset(text);
     this.isError = false;
    
@@ -141,7 +148,7 @@ export class LuaParse {
     }
    
     this.tokens = tokens;
-    this.luaInfoManager.init(this, this.currentUri);
+    this.luaInfoManager.init(this, this.currentUri,this.tempUri);
     this.tokenIndex = 0;
     this.tokensLength = tokens.length;
    var isReturn = this.setLuaInfo(this.rootLuaInfo,null,null)
@@ -154,7 +161,7 @@ export class LuaParse {
     if (this.isError == false) {
       for(var i = 0; i < this.errorFilePaths.length;i++)
       {
-        if(this.currentUri.path == this.errorFilePaths[i].path)
+        if(this.tempUri.path == this.errorFilePaths[i].path)
         {
             this.errorFilePaths.splice(i,1)
             break;
@@ -162,12 +169,21 @@ export class LuaParse {
       }
       
       //正确了删除错误提示
-      if(this.diagnosticCollection  && this.diagnosticCollection.has(this.currentUri)){
-      this.diagnosticCollection.delete(this.currentUri)
-      }
-      this.luaInfoManager.getFcim(this.currentUri).selfToGolbal();
+      if(this.diagnosticCollection  && this.diagnosticCollection.has(this.tempUri)){
+      this.diagnosticCollection.delete(this.tempUri)
+    }
+   
+      var fcim:FileCompletionItemManager = this.luaInfoManager.fileCompletionItemManagers.get(this.currentUri.path);
+       if(this.isSaveCompletion){
+       this.luaInfoManager.fileCompletionItemManagers.set(this.tempUri.path,fcim)
+    }
+     
+      
+      this.luaInfoManager.fileCompletionItemManagers.delete(this.currentUri.path)
     } else {
       console.log("错误的")
+      var fcim:FileCompletionItemManager = this.luaInfoManager.fileCompletionItemManagers.get(this.currentUri.path);
+      fcim.clear()
     }
 
   }
@@ -321,7 +337,7 @@ export class LuaParse {
     var endPo:vscode.Position = new vscode.Position(token.line,token.range.end - token.lineStart)
     var range:vscode.Range = new vscode.Range(starPo,endPo)
    var currentDiagnostic:vscode.Diagnostic = new vscode.Diagnostic(range, typeMsg,        vscode.DiagnosticSeverity.Error);
-    this.diagnosticCollection.set(this.currentUri, [currentDiagnostic]);
+    this.diagnosticCollection.set(this.tempUri, [currentDiagnostic]);
  
   }
   public getUpToken():TokenInfo

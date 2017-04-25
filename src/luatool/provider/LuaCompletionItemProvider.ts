@@ -2,13 +2,13 @@
 'use strict';
 
 import vscode = require('vscode');
-import {LuaParse} from '../LuaParse'
-import {LuaParseTool} from '../LuaParseTool'
-import {LuaFiledCompletionInfo} from "../provider/LuaFiledCompletionInfo"
-import {  LuaInfo, TokenInfo, TokenTypes, LuaComment, LuaRange, LuaErrorEnum, LuaError, LuaInfoType} from '../TokenInfo';
-import {CLog,getSelfToModuleName} from '../Utils'
-
-
+import { LuaParse } from '../LuaParse'
+import { LuaParseTool } from '../LuaParseTool'
+import { LuaFiledCompletionInfo } from "../provider/LuaFiledCompletionInfo"
+import { LuaInfo, TokenInfo, TokenTypes, LuaComment, LuaRange, LuaErrorEnum, LuaError, LuaInfoType } from '../TokenInfo';
+import { CLog, getSelfToModuleName } from '../Utils'
+import { ProviderUtils } from '../provider/providerUtils'
+import { LuaFileCompletionItems } from "../manager/LuaFileCompletionItems"
 export class LuaCompletionItemProvider implements vscode.CompletionItemProvider {
 
 
@@ -24,34 +24,67 @@ export class LuaCompletionItemProvider implements vscode.CompletionItemProvider 
         position: vscode.Position,
         token: vscode.CancellationToken,
         config: vscode.WorkspaceConfiguration): Thenable<vscode.CompletionItem[]> {
-            
+
         return new Promise<vscode.CompletionItem[]>((resolve, reject) => {
             let filename = document.fileName;
             let lineText = document.lineAt(position.line).text;
+            var requireRuggestions: Array<LuaFiledCompletionInfo> = new Array<LuaFiledCompletionInfo>();
+            var suggestions: Array<LuaFiledCompletionInfo> = new Array<LuaFiledCompletionInfo>();
             let lineTillCurrentPosition = lineText.substr(0, position.character);
-            var suggestions:Array<LuaFiledCompletionInfo> = new Array<LuaFiledCompletionInfo>();
-            var infos= this.getCurrentStrInfo(document, position)
-            if(infos == null) return[]
-            var functionitem:Array<LuaFiledCompletionInfo> = LuaParse.lp.luaInfoManager.getFunctionCompletionItems(
-                document.uri,infos[0])
-            if (functionitem == null) return resolve([])
-           var argsItems : Array<LuaFiledCompletionInfo>;
-            if(infos[0].length == 1) {
-            argsItems = LuaParse.lp.luaInfoManager.getFunctionArgs(infos[1],document.uri)
-          }
-          if(argsItems) {
-          argsItems.forEach(element => {
-                suggestions.push(element)
-            });
+            if (lineTillCurrentPosition.indexOf("require") > -1 || lineTillCurrentPosition.indexOf("import")) {
+                var rstr = lineTillCurrentPosition.trim();
+                var tokens: Array<TokenInfo> = ProviderUtils.getTokens(document, position)
+                var lastToken: TokenInfo = tokens[tokens.length - 1]
+
+                if (tokens.length >= 2) {
+                    if (lastToken.value == "" || lastToken.value == '"') {
+                        var rtoken: TokenInfo = tokens[tokens.length - 2]
+                        if (rtoken.type == TokenTypes.Identifier &&
+                            (rtoken.value == "require" || rtoken.value == "import")
+                        ) {
+
+                            requireRuggestions = LuaFileCompletionItems.getLuaFileCompletionItems().completions;
+                        } else {
+                            if (tokens.length >= 3) {
+                                var rtoken: TokenInfo = tokens[tokens.length - 3]
+                                if (rtoken.type == TokenTypes.Identifier &&
+                                    (rtoken.value == "require" || rtoken.value == "import")
+                                ) {
+                                    requireRuggestions = LuaFileCompletionItems.getLuaFileCompletionItems().completions;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+
+            var infos = this.getCurrentStrInfo(document, position)
+            if (infos == null) return resolve(requireRuggestions);
+            var functionitem: Array<LuaFiledCompletionInfo> = LuaParse.lp.luaInfoManager.getFunctionCompletionItems(
+                document.uri, infos[0])
+            if (functionitem == null) return resolve(requireRuggestions)
+            var argsItems: Array<LuaFiledCompletionInfo>;
+            if (infos[0].length == 1) {
+                argsItems = LuaParse.lp.luaInfoManager.getFunctionArgs(infos[1], document.uri)
+            }
+            if (argsItems) {
+                argsItems.forEach(element => {
+                    suggestions.push(element)
+                });
             }
             functionitem.forEach(element => {
                 suggestions.push(element)
             });
+            requireRuggestions.forEach(element=>{
+                 suggestions.push(element)
+
+            })
             return resolve(suggestions);
         })
 
     }
-    
+
 
     public getCurrentStrInfo(
         document: vscode.TextDocument,
@@ -62,7 +95,7 @@ export class LuaCompletionItemProvider implements vscode.CompletionItemProvider 
         var tokens: Array<TokenInfo> = new Array<TokenInfo>();
         lpt.Reset(document.getText(new vscode.Range(start, position)))
         while (true) {
-          CLog();
+            CLog();
             var token: TokenInfo = lpt.lex();
             if (token.error != null) {
                 return;
@@ -78,12 +111,12 @@ export class LuaCompletionItemProvider implements vscode.CompletionItemProvider 
         var index: number = tokens.length - 1;
         var _GNumber: number = 0;
         var _MNumber: number = 0;
-        var keyss:Array<Array<string>> = new Array<Array<string>>();
+
         var keys: Array<string> = new Array<string>();
-        keyss.push(keys);
+
         var key: string = "";
         while (true) {
-          CLog();
+            CLog();
             if (index < 0) break;
             var token: TokenInfo = tokens[index]
             if (
@@ -116,11 +149,11 @@ export class LuaCompletionItemProvider implements vscode.CompletionItemProvider 
                 continue;
             }
             else if (lp.consume(')', nextToken, TokenTypes.Punctuator)) {
-                if(token.type == TokenTypes.Identifier) break;
+                if (token.type == TokenTypes.Identifier) break;
                 var m_number = 1;
                 var beginIndex = index - 1;
                 while (true) {
-                  CLog();
+                    CLog();
                     index--;
                     if (lp.consume('(', tokens[index], TokenTypes.Punctuator)) {
                         m_number--;
@@ -139,11 +172,11 @@ export class LuaCompletionItemProvider implements vscode.CompletionItemProvider 
                 continue;
             }
             else if (lp.consume(']', nextToken, TokenTypes.Punctuator)) {
-                if(token.type == TokenTypes.Identifier) break;
+                if (token.type == TokenTypes.Identifier) break;
                 var g_number = 1;
                 var beginIndex = index - 1;
                 while (true) {
-                  CLog();
+                    CLog();
                     index--;
                     if (lp.consume('[', tokens[index], TokenTypes.Punctuator)) {
                         g_number--;
@@ -165,35 +198,33 @@ export class LuaCompletionItemProvider implements vscode.CompletionItemProvider 
                 break;
             }
         }
-   
-        var moduleName:string = "";
-        
-        if(keys.length == 2){
-            if(keys[1]== "self" && (keys[0] == ':' 
-             || keys[0] == '.'
-            ))
-            {
-                var keys1:Array<string> = [keys[0],"self"];
+
+        var moduleName: string = "";
+
+        if (keys.length >= 2) {
+            if (keys[keys.length - 1] == "self" && (keys[keys.length - 2] == ':'
+                || keys[keys.length - 2] == '.'
+            )) {
+
                 //检查 function
                 //找出self 代表的 模块名
                 //向上找 function
-                var moduleName:string = getSelfToModuleName(tokens,lp)
-                if(moduleName)
-                {
-                    keys1[1] = moduleName
-                    keyss.push(keys1)
+                var moduleName: string = getSelfToModuleName(tokens, lp)
+                if (moduleName) {
+                    keys[keys.length - 1] = moduleName
+
                 }
             }
-        } 
+        }
         // console.log("moduleName:"+moduleName)
-        
-        return [keyss,tokens]
+
+        return [keys, tokens]
     }
 
 
 
 
-    
+
 
 
 }

@@ -25,7 +25,7 @@ export class TemplateManager {
             "CreateModuleFunctionTemplate.lua",
             "CreateFunctionTemplate.lua",
         ];
-        var extensionPath = vscode.extensions.getExtension("kangping.luaide").extensionPath
+        var extensionPath = ExtensionManager.em.luaIdeConfigManager.extensionPath
         this.defaultFunTempl = path.join(extensionPath, 'Template', 'funTemplate');
 
         //检查
