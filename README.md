@@ -15,10 +15,10 @@
 3.  调试文件为两个 LuaDebug,LuaDebugjit  添加调试文件时确认一下自己运行时选择对应的调试文件
 4.  bug 和  问题 请留言 [issues](https://github.com/k0204/LuaIde/issues)  
 4.  [调试视频](https://github.com/k0204/LuaIde/wiki/%E8%A7%86%E9%A2%91%E6%95%99%E7%A8%8B)  
-
+5. [历史版本](https://github.com/k0204/LuaIde/tree/master/version) 如果当前版本出现bug 可将 win->:\Users\Administrator\.vscode\extensions   和 mac->user/.vscode/extensions 中对应的文件夹删除将历史版本解压重启vscode
 
 #更新记录
-1. 0.1.9 
+1. 0.1.9->0.2.1 
 	1. 添加 输入 **---** 自动生成方法注释 
 	2. 优化方法信息提示 区分全局函数和局部函数
 	3. 优化  **require**  时 lua 文件路径提示 兼容 "xxx.xxx.xx" 和 自定义变量 注意如果需要显示"xxx.xxx.xxx" 需要设置 **luaide.scriptRoots** 

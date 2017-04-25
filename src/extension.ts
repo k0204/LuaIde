@@ -54,7 +54,7 @@ export function activate(context: vscode.ExtensionContext) {
 	var uris: Array<vscode.Uri> = new Array<vscode.Uri>();
 	var index: number = 0;
 	function parseLuaFile() {
-		if (index < uris.length) {
+		if (index >= uris.length) {
 			vscode.window.showInformationMessage("check complete!")
 			//  vscode.window.setStatusBarMessage("")
 			em.barItem.text = "捐献(LuaIde)"
@@ -85,9 +85,9 @@ export function activate(context: vscode.ExtensionContext) {
 				
 			}
 		).then(function(event) {
-			console.log(event)
+			// console.log(event)
 		},function(reason){
-			console.log(reason)
+			// console.log(reason)
 			index++;
 			parseLuaFile()
 		})
