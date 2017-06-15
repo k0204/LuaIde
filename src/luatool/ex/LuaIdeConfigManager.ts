@@ -6,7 +6,10 @@ import child_process = require('child_process');
 import { getConfigDir } from "../../Common"
 // import { StatisticsMain,StatisticsEvent } from "../../luatool/statistics/StatisticsMain"
 import { UserInfo } from "../ex/UserInfo"
+import { ConstInfo } from "../../ConstInfo";
+
 export class LuaIdeConfigManager {
+   
     private macroConfig: Map<string, string>;
     //模板文件夹路径
     public luaTemplatesDir: string;
@@ -18,23 +21,40 @@ export class LuaIdeConfigManager {
     private isShowDest: boolean;
     public changeTextCheck: boolean;
     public moduleFunNestingCheck: boolean;
+    public requireFunNames:Array<string>;
     // private statisticsMain:StatisticsMain;
     public scriptRoots: Array<string>;
+   
+    public isInit :boolean = false
     constructor() {
-        this.extensionPath = vscode.extensions.getExtension("kangping.luaide").extensionPath
-        this.configInit();
-        this.copyConfig();
-        this.readUserInfo();
-        // this.statisticsMain = new StatisticsMain(this.userInfo)
-        this.showRecharge();
-        this.showIndex();
+       this.requireFunNames = new Array<string>();
+       this.requireFunNames.push("require")
+       this.requireFunNames.push("import")
+        this.extensionPath = vscode.extensions.getExtension(ConstInfo.extensionConfig).extensionPath
+           
+        try{
+             this.configInit();
+            this.copyConfig();
+            this.readUserInfo();
+            // this.statisticsMain = new StatisticsMain(this.userInfo)
+            this.showRecharge();
+            this.showIndex();
+            this.isInit= true;
+        }catch(err){
+             vscode.window.showInformationMessage(ConstInfo.extensionName + "启动失败,请检查"+err.path +"的写入权限");
+            
+            console.log(err)
+        }
+       
 
     }
     public showIndex() {
+            
         if (this.userInfo.showIndex == 0 || this.isShowDest) {
             var extensionPath = path.join(this.extensionPath, "images", "index.html")
             var previewUri = vscode.Uri.file(extensionPath);
-            vscode.commands.executeCommand('vscode.previewHtml', previewUri, vscode.ViewColumn.One, "LuaIde介绍").then(value => {
+        //    var previewUri = vscode.Uri.parse("www.baidu.com")
+            vscode.commands.executeCommand('vscode.previewHtml', previewUri, vscode.ViewColumn.Three, "LuaIde介绍").then(value => {
 
             })
             this.userInfo.showIndex = 1
@@ -54,12 +74,19 @@ export class LuaIdeConfigManager {
         this.changeTextCheck = luaideConfig.get<boolean>("changeTextCheck")
         this.moduleFunNestingCheck = luaideConfig.get<boolean>("moduleFunNestingCheck")
         this.maxFileSize = luaideConfig.get<number>("maxFileSize")
-        var scriptRoots: Array<any> = luaideConfig.get<Array<any>>("scriptRoots");
+        
+        var scriptRoots: Array<string> = luaideConfig.get<Array<string>>("scriptRoots");
         this.scriptRoots = new Array<string>();
         scriptRoots.forEach(rootpath => {
-            this.scriptRoots.push(rootpath)
+              var    scriptRoot = rootpath.replace(/\\/g, "/");
+            scriptRoot =  scriptRoot.replace(new RegExp("/", "gm"), ".")
+            scriptRoot = scriptRoot.toLowerCase();
+            this.scriptRoots.push(scriptRoot)
 
         })
+        if(this.scriptRoots.length == 0){
+             vscode.window.showInformationMessage("请在 文件->首选项->设置->工作区设置 添加 luaide.scriptRoots 的配置,否则无法获得最好的提示代码联想效果!");
+        }
 
         this.isShowDest == this.isShowDest == null ? false : this.isShowDest
         if (this.luaOperatorCheck == null) {
@@ -106,11 +133,9 @@ export class LuaIdeConfigManager {
             fs.mkdirSync(userPath, '0755');
         }
         var userInfoPath = path.join(userPath, "userInfo")
-        try {
+        
             fs.writeFileSync(userInfoPath, this.userInfo.toString());
-        } catch (err) {
-
-        }
+       
     }
     public showRecharge() {
         var date: Date = new Date();
@@ -232,24 +257,21 @@ export class LuaIdeConfigManager {
         var extensionPath = this.extensionPath
 
         var userPath = getConfigDir()
+        userPath = userPath.replace(/\\/g, "/");
         if (!fs.existsSync(userPath)) {
             fs.mkdirSync(userPath, '0755');
         }
         var configFile = path.join(userPath, "luaideConfig")
         if (!fs.existsSync(configFile)) {
-            try {
+           
                 fs.writeFileSync(configFile, extensionPath);
-            } catch (err) {
-
-            }
+            
         } else {
             var contentText = fs.readFileSync(path.join(configFile), 'utf-8');
             if (contentText != extensionPath) {
-                try {
+                
                     fs.writeFileSync(configFile, extensionPath);
-                } catch (err) {
-
-                }
+               
             }
         }
     }

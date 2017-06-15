@@ -1,5 +1,5 @@
 
-# LuaIde Trial 为 LuaIde 的免费版本 
+# LuaCode 为 luaIde 的测试版本 请不要同时安装 两个插件 
 1. author:kangping  
 1. **luaIde** 是基于vscode开发的一款用于lua语言开发者使用的插件  
 1. 目标:致力于做最好的**跨平台**lua开发工具  
@@ -10,22 +10,22 @@
 
 
 # LuaCode 更新日志 当前版本为测试版 
-1. 2017/6/8 0.3.1 版本
-	1. 修复添加新文件无法 无法在 require 和类型注释中提示的bug
-	2. 修复for 循环中的变量错误的解析为全局变量
-	3. 修复全局方法返回值 无法提示
-	4. 添加注释提示
-	5. 添加变量类型注释 `--@valueReference [Model.BaseModel] `  当输入[ 会列出当前文件中所有的文件
-	4. 注释路径添加转到定义
-	5. 添加写入初始化信息 文件夹权限不足提示
+ 
 1. 2017/6/8 0.3.0 版本
-	2. 增强代码推断能力,与0.2.x 版本用了两套逻辑 所以luaide 版本终结与0.2.1 以后待功能完善后 luaide将更名为luaIdeProfessional 
-	3. 增加了 方法返回值 注释 和父类 类型注释
-	1. 方法返回值注释:`--@returnValue [Model.BaseModel]`  当输入[ 会列出当前文件中所有的文件
+2. 增强代码推断能力,与0.2.x 版本用了两套逻辑 所以luaide 版本终结与0.2.1 以后待功能完善后 luaide将更名为luaIdeProfessional 
+3. 增加了 方法返回值 注释 和父类 类型注释
+	1. 方法返回值注释:`--@return [Model.BaseModel]`  当输入[ 会列出当前文件中所有的文件
 	1. 父类类型注释:`--@parentClass [Model.BaseModel]`  当输入[ 会列出当前文件中所有的文件
 	1. 两种注释需要 添加luaide 的配置 "luaide.scriptRoots": ["C:/Users/Administrator/Desktop/t"]
 
-#重要提示
+
+
+# 请下载 luaide  为稳定版本
+# 当前LuaCode版本为测试版本不能保证正常提示 用于测试 
+# 5月尝试着将代码提示做的更智能，发现原有代码不能很好的支持，于是将一部分代码进行了重构在接下来的一个月插件将不再更新直到重构完毕会将插件提交带luacode中进行测试没有问题后再更新luaide 新的插件将提供更加智能的提示 代码提示的准确率会大大加强. 2017/5/1  
+
+
+# 重要提示
 1.  [LuaDebug 下载地址](https://github.com/k0204/LuaIde/tree/master/luadebug)
 2.  文档请直接查看[wiki](https://github.com/k0204/LuaIde/wiki)
 3.  qq群 **494653114** 
@@ -34,7 +34,7 @@
 4.  [调试视频](https://github.com/k0204/LuaIde/wiki/%E8%A7%86%E9%A2%91%E6%95%99%E7%A8%8B)  
 5. [历史版本](https://github.com/k0204/LuaIde/tree/master/version) 如果当前版本出现bug 可将 win->:\Users\Administrator\.vscode\extensions   和 mac->user/.vscode/extensions 中对应的文件夹删除将历史版本解压重启vscode
 
-#更新记录
+# 更新记录
 1. 0.1.9->0.2.2 
 	1. 修复模块方法创建 插入位置错误 修改为插入到当前方法结束后
 	2. 方法注释 @desc 无法显示bug

@@ -35,22 +35,22 @@ export function initConfig(args: any): any {
         if (result != true) {
             return result
         }
-       
+
         return result;
-        }
+    }
     else if (runtimeType == "Cocos2" || runtimeType == "Cocos3") {
         if (!fs.existsSync(args.exePath)) {
             return `File does not exist. "${args.exePath}"`;
         }
-        if(args.scripts){
+        if (args.scripts) {
 
-        
-        for (var index = 0; index < args.scripts.length; index++) {
-            var scriptsPath = args.scripts[index];
-            if (!fs.existsSync(scriptsPath)) {
-                return `File does not exist. "${scriptsPath}"`;
+
+            for (var index = 0; index < args.scripts.length; index++) {
+                var scriptsPath = args.scripts[index];
+                if (!fs.existsSync(scriptsPath)) {
+                    return `File does not exist. "${scriptsPath}"`;
+                }
             }
-        }
         }
         return true
     }
@@ -58,7 +58,7 @@ export function initConfig(args: any): any {
 
 
 
-   
+
 
 
 }
@@ -108,13 +108,26 @@ export function getExtensionPath() {
 
     return false;
 }
-
+//递归创建目录 同步方法
+export function mkdirsSync(dirname) {
+    //console.log(dirname);
+    if (fs.existsSync(dirname)) {
+        return true;
+    } else {
+        if (mkdirsSync(path.dirname(dirname))) {
+            fs.mkdirSync(dirname);
+            return true;
+        }
+    }
+}
 /**
 * Returns the default templates location based on the user OS.
 * @returns {string}
 */
 export function getConfigDir() {
     var userDataDir = null;
+
+
     switch (process.platform) {
         case 'linux':
             userDataDir = path.join(os.homedir(), '.config');
@@ -128,5 +141,9 @@ export function getConfigDir() {
         default:
             throw Error("Unrecognizable operative system");
     }
-    return path.join(userDataDir, 'code', 'user', "luaide");
+
+    userDataDir = path.join(userDataDir, 'code', 'user', "luaide");
+    mkdirsSync(userDataDir)
+    return userDataDir
 };
+

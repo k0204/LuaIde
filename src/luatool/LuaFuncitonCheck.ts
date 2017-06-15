@@ -4,7 +4,7 @@ import { CLog } from './Utils'
 import { ExtensionManager } from "../luatool/ex/ExtensionManager"
 export class LuaFuncitonCheck {
     private lp: LuaParse;
-
+    
     constructor(luaparse: LuaParse) {
         this.lp = luaparse;
     }
@@ -13,6 +13,7 @@ export class LuaFuncitonCheck {
      * 检查if 语句
      */
     public check(): boolean {
+        
         var functionToken: TokenInfo = this.lp.getCurrentToken("代码未完成")
         if (this.lp.isError) return;
         if (this.lp.consume('function', functionToken, TokenTypes.Keyword)) {
@@ -33,7 +34,7 @@ export class LuaFuncitonCheck {
         return false
     }
 
-    private currentFunLuaInfo: LuaInfo;
+    public currentFunLuaInfo: LuaInfo;
     public checkGlobalFunction(functionToken: TokenInfo): boolean {
 
         var luaInfo: LuaInfo = new LuaInfo(this.lp.getTokenByIndex(this.lp.tokenIndex + 1, "funcito 未完成"));
@@ -46,7 +47,9 @@ export class LuaFuncitonCheck {
         while (true) {
             CLog();
             var token: TokenInfo = this.lp.getNextToken("function 未完成")
-
+           if(token == null){
+                return false
+           }
             // luaInfo.name = luaInfo.name + token.value;
             if (token.type == TokenTypes.Identifier) {
                 var nextToken: TokenInfo = this.lp.getNextToken("function 未完成")
@@ -61,6 +64,8 @@ export class LuaFuncitonCheck {
                             this.lp.setError(token, "module 方法出现嵌套", this.currentFunLuaInfo.startToken);
                             return
                         }
+                        
+                        
                         this.currentFunLuaInfo = luaInfo
                         var funResult = this.checkLocalFunction(luaInfo, functionToken.comments);
                         this.currentFunLuaInfo = null

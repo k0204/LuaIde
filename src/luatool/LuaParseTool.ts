@@ -1,56 +1,47 @@
-import {LuaParse} from './LuaParse'
-import {Range} from 'vscode-languageclient';
-import {LuaInfo, TokenInfo, TokenTypes, LuaComment, LuaRange, LuaErrorEnum, LuaError} from './TokenInfo';
-import {CLog} from './Utils'
-export class LuaParseTool
-{
-    private lp:LuaParse;
-    //当前解析到的位置
-    private index: number = 0;
-    //文本总长度
-    private length: number = 0;
+import { LuaParse } from './LuaParse'
+import { Range } from 'vscode-languageclient';
+import { LuaInfo, TokenInfo, TokenTypes, LuaComment, LuaRange, LuaErrorEnum, LuaError } from './TokenInfo';
+import { CLog } from './Utils'
+export class LuaParseTool {
+  private lp: LuaParse;
+  //当前解析到的位置
+  private index: number = 0;
+  //文本总长度
+  private length: number = 0;
 
-    public input: string = "";
-    //当前解析的行
-    private line: number = 0;
-    //当前行开始的开始的位置
-    private lineStart: number = 0;
-    //标示符 或者 关键字 开始的 位置
-    private tokenStart: number = 0;
-     //当前块
-    private token: TokenInfo;
-    constructor(luaparse:LuaParse)
-    {
-        this.lp = luaparse;
-    }
-    // 重置
-    public Reset(text:string):void
-    { 
-       this.input = text;
-       //检查第一个字符是否为#
-   
+  public input: string = "";
+  //当前解析的行
+  private line: number = 0;
+  //当前行开始的开始的位置
+  private lineStart: number = 0;
+  //标示符 或者 关键字 开始的 位置
+  private tokenStart: number = 0;
+  //当前块
+  private token: TokenInfo;
+  constructor(luaparse: LuaParse) {
+    this.lp = luaparse;
+  }
+  // 重置
+  public Reset(text: string): void {
+    this.input = text;
+    //检查第一个字符是否为#
+    this.index = 0;
+    this.length = this.input.length;
+    this.line = 0;
+    this.lineStart = 0;
+    if (this.input.charAt(0) == '#') {
+     
+      while (true) {
+        if (this.consumeEOL()) {
+          break
+        } else {
+          this.index++;
+        }
 
-      this.index = 0;
-      this.length = this.input.length;
-      this.line = 0;
-      this.lineStart = 0;
-    if(this.input.charAt(0) == '#')
-       {
-        //  console.log(text)
-          while(true)
-          {
-             if( this.consumeEOL())
-             {
-               break
-             }else
-             {
-               this.index++;
-             }
-              
-          }
-       }
+      }
     }
-    public lex(): TokenInfo {
+  }
+  public lex(): TokenInfo {
     var token = new TokenInfo();
     //去掉空格
     this.skipWhiteSpace();
@@ -190,23 +181,22 @@ export class LuaParseTool
     var character: string = this.input.charAt(this.index);
     var next: string = this.input.charAt(this.index + 1);
     //这里需要检查 是否为 ..
-   
+
     var value = 0;
     if ('0' === character && 'xX'.indexOf(next || null) >= 0) {
       value = this.readHexLiteral(token);
       if (token.error != null) {
         return token;
       }
-    }else if(this.input.charAt(this.index + 2) != null && next === '.' && this.input.charAt(this.index + 2) === '.')
-    {
+    } else if (this.input.charAt(this.index + 2) != null && next === '.' && this.input.charAt(this.index + 2) === '.') {
       this.index++
-        value = parseInt(character)
-    } 
+      value = parseInt(character)
+    }
     else {
-      if(next)
-      value = this.readDecLiteral(token);
+      if (next)
+        value = this.readDecLiteral(token);
       else
-      this.index++;
+        this.index++;
       if (token.error != null) {
         return token;
       }
@@ -298,81 +288,66 @@ export class LuaParseTool
    * 解析十进制数
    */
   private readDecLiteral(token: TokenInfo): number {
-    
+
     while (this.isDecDigit(this.input.charCodeAt(this.index))) this.index++;
     // Fraction part is optional
     if ('.' === this.input.charAt(this.index)) {
       this.index++;
       //这里还需要进行判断 是否 为 ..
       // Fraction part defaults to 0
-      while (true)
-      {
-        var codeNumber:number = this.input.charCodeAt(this.index)
-        if(this.isDecDigit(codeNumber))
-        {
-           this.index++;
+      while (true) {
+        var codeNumber: number = this.input.charCodeAt(this.index)
+        if (this.isDecDigit(codeNumber)) {
+          this.index++;
         }
-        else if(this.isWhiteSpace(codeNumber) || this.isLineTerminator(codeNumber))
-        {
+        else if (this.isWhiteSpace(codeNumber) || this.isLineTerminator(codeNumber)) {
           break
-        }else if( ';' === this.input.charAt(this.index))
-        {
+        } else if (';' === this.input.charAt(this.index)) {
           break
         }
-        else if( '+' === this.input.charAt(this.index))
-        {
+        else if ('+' === this.input.charAt(this.index)) {
           break
         }
-        else if( '-' === this.input.charAt(this.index))
-        {
+        else if ('-' === this.input.charAt(this.index)) {
           break
         }
-        else if( ',' === this.input.charAt(this.index))
-        {
+        else if (',' === this.input.charAt(this.index)) {
           break
         }
-        else if( ']' === this.input.charAt(this.index))
-        {
+        else if (']' === this.input.charAt(this.index)) {
           break
         }
-         else if( ')' === this.input.charAt(this.index))
-        {
+        else if (')' === this.input.charAt(this.index)) {
           break
         }
-        else if( '}' === this.input.charAt(this.index))
-        {
+        else if ('}' === this.input.charAt(this.index)) {
           break
         }
-        else if( '*' === this.input.charAt(this.index))
-        {
+        else if ('*' === this.input.charAt(this.index)) {
           break
         }
-        else if( '/' === this.input.charAt(this.index))
-        {
+        else if ('/' === this.input.charAt(this.index)) {
           break
         }
-        else if( '^' === this.input.charAt(this.index))
-        {
+        else if ('^' === this.input.charAt(this.index)) {
           break
         }
-        
-        else if('eE'.indexOf(this.input.charAt(this.index)) >= 0) 
-        {
-           break
+
+        else if ('eE'.indexOf(this.input.charAt(this.index)) >= 0) {
+          break
         }
-        else
-        {
-            this.index++;
-             token.line = this.line;
-            token.lineStart = this.lineStart;
-            token.range = new LuaRange(this.tokenStart, this.index)
-            token.error = new LuaError(LuaErrorEnum.malformedNumber, this.input.slice(this.tokenStart, this.index))
-            return
+        else {
+          this.index++;
+          token.line = this.line;
+          token.lineStart = this.lineStart;
+          token.range = new LuaRange(this.tokenStart, this.index)
+          token.error = new LuaError(LuaErrorEnum.malformedNumber, this.input.slice(this.tokenStart, this.index))
+          return
         }
-      } 
+      }
     }
     // Exponent part is optional.
-     if ('eE'.indexOf(this.input.charAt(this.index) || null) >= 0) {
+    if ('eE'.indexOf(this.input.charAt(this.index) || null) >= 0) {
       this.index++;
       // Sign part is optional.
       if ('+-'.indexOf(this.input.charAt(this.index) || null) >= 0) this.index++;
@@ -387,47 +362,45 @@ export class LuaParseTool
       while (this.isDecDigit(this.input.charCodeAt(this.index))) this.index++;
     }
     var chatat = this.input.charAt(this.index)
-    var chatat1 = this.input.charAt(this.index+1)
-    if(this.isWhiteSpace( this.input.charCodeAt(this.index)) ||
-     this.isLineTerminator(this.input.charCodeAt(this.index)) || 
-     ';' === chatat ||
-     '' === chatat ||
-     ']' === chatat ||
-     ')' === chatat ||
-     ',' === chatat ||
+    var chatat1 = this.input.charAt(this.index + 1)
+    if (this.isWhiteSpace(this.input.charCodeAt(this.index)) ||
+      this.isLineTerminator(this.input.charCodeAt(this.index)) ||
+      ';' === chatat ||
+      '' === chatat ||
+      ']' === chatat ||
+      ')' === chatat ||
+      ',' === chatat ||
       '}' === chatat ||
-     chatat == '+' ||
-        chatat == '-' ||
-        chatat == '*' ||
-        chatat == '/' ||
-        chatat == '>' ||
-        chatat == '>' ||
-        chatat == ',' ||
-        chatat == '}' ||
-        chatat == '^' ||
-      
-     ('=' == chatat && '=' == chatat1 ) ||
-     ('>' == chatat && '=' == chatat1 ) ||
-      ('<' == chatat && '=' == chatat1 ) ||
-      ('~' == chatat && '=' == chatat1 ) 
-     )
-    {
+      chatat == '+' ||
+      chatat == '-' ||
+      chatat == '*' ||
+      chatat == '/' ||
+      chatat == '>' ||
+      chatat == '>' ||
+      chatat == ',' ||
+      chatat == '}' ||
+      chatat == '^' ||
+
+      ('=' == chatat && '=' == chatat1) ||
+      ('>' == chatat && '=' == chatat1) ||
+      ('<' == chatat && '=' == chatat1) ||
+      ('~' == chatat && '=' == chatat1)
+    ) {
       return parseFloat(this.input.slice(this.tokenStart, this.index));
-    }else
-    {
+    } else {
       this.index++;
-       token.line = this.line;
-        token.lineStart = this.lineStart;
-        token.range = new LuaRange(this.tokenStart, this.index)
-        token.error = new LuaError(LuaErrorEnum.malformedNumber, this.input.slice(this.tokenStart, this.index))
+      token.line = this.line;
+      token.lineStart = this.lineStart;
+      token.range = new LuaRange(this.tokenStart, this.index)
+      token.error = new LuaError(LuaErrorEnum.malformedNumber, this.input.slice(this.tokenStart, this.index))
     }
-    
-  
-   
+
+
+
   }
-    /**
-   * 获取注释
-   */
+  /**
+ * 获取注释
+ */
   private scanComment(token: TokenInfo): void {
     //  this.tokenStart = this.index;
     this.index += 2;
@@ -463,17 +436,17 @@ export class LuaParseTool
       start: { line: lineComment, character: lineStartComment },
       end: { line: this.lineStart, character: this.index - this.lineStart }
     }
-    
-    token.addComment( new LuaComment(content, range,isLong));
+
+    token.addComment(new LuaComment(content, range, isLong));
 
 
   }
- /**
-   * 获取长字符串
-   *  * return 
-   *          为长字符串 content
-   *          不为长字符串  false
-   */
+  /**
+    * 获取长字符串
+    *  * return 
+    *          为长字符串 content
+    *          不为长字符串  false
+    */
   private readLongString(): any {
     //多少个  等于符号
     var level: number = 0;
@@ -500,44 +473,41 @@ export class LuaParseTool
     stringStart = this.index;
     // 读取注释内容
     while (this.index < this.length) {
-      while(true)
-      {
-      if (this.isLineTerminator(this.input.charCodeAt(this.index))) {
-         this.consumeEOL();
-      }else
-      {
-        break;
-      }
+      while (true) {
+        if (this.isLineTerminator(this.input.charCodeAt(this.index))) {
+          this.consumeEOL();
+        } else {
+          break;
+        }
       }
 
       character = this.input.charAt(this.index++);
 
       if (']' == character) {
-        
-       terminator = true;
+
+        terminator = true;
         for (var i = 0; i < level; i++) {
           if ('=' !== this.input.charAt(this.index + i)) {
             terminator = false;
           }
         }
-         if (']' !== this.input.charAt(this.index + level)) {
-            terminator = false;
-          }
+        if (']' !== this.input.charAt(this.index + level)) {
+          terminator = false;
+        }
       }
       if (terminator) break;
 
     }
-    if(terminator)
-    {
+    if (terminator) {
       content += this.input.slice(stringStart, this.index - 1);
-    this.index += level + 1;
-    return content;
-    }return false;
-    
+      this.index += level + 1;
+      return content;
+    } return false;
+
   }
- /**
-   * 读取转义符
-   */
+  /**
+    * 读取转义符
+    */
   private readEscapeSequence(): string {
     var sequenceStart = this.index;
     switch (this.input.charAt(this.index)) {
@@ -633,17 +603,17 @@ export class LuaParseTool
 
 
     var error: LuaError = new LuaError(LuaErrorEnum.unexpected, token.value);
-    var value:string = token.value + ""
-  
+    var value: string = token.value + ""
+
     token.range = new LuaRange(this.tokenStart, this.tokenStart + value.length)
     token.line = this.line;
     token.lineStart = this.lineStart;
     token.error = error;
     return token;
   }
- /**
-   * 解析标点
-   */
+  /**
+    * 解析标点
+    */
   private scanPunctuator(value: string, token: TokenInfo): TokenInfo {
 
     this.index += value.length;
@@ -751,10 +721,10 @@ export class LuaParseTool
     return (charCode >= 48 && charCode <= 57) || (charCode >= 97 && charCode <= 102) || (charCode >= 65 && charCode <= 70);
   }
 
-   /**
-   * 解析 表示符号 或者 关键字
-   * 
-   */
+  /**
+  * 解析 表示符号 或者 关键字
+  * 
+  */
   private scanIdentifierOrKeyword(token: TokenInfo): TokenInfo {
     var value: any = null;
     var type;

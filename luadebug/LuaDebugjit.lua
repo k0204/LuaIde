@@ -594,26 +594,26 @@ LuaDebugger.event = {
 	C2S_LoadLuaScript = 18,
 	C2S_DebugXpCall = 20,
 }
--- function print(...)
--- 	if(LuaDebugger.isProntToConsole == 1 or LuaDebugger.isProntToConsole == 3) then
--- 		debugger_print(...)
--- 	end
--- 	if(LuaDebugger.isProntToConsole == 1 or LuaDebugger.isProntToConsole == 2) then
--- 		if(debug_server) then
--- 			local arg = {...}    --这里的...和{}符号中间需要有空格号，否则会出错  
--- 			local str = ""
--- 			for k, v in pairs(arg) do
--- 				str = str .. tostring(v) .. "\t"
--- 			end
--- 			local sendMsg = {
--- 				event = LuaDebugger.event.C2S_LuaPrint,
--- 				data = {msg = str}
--- 			}
--- 			local sendStr = json.encode(sendMsg)
--- 			debug_server:send(sendStr .. "__debugger_k0204__")
--- 		end
--- 	end
--- end
+function print(...)
+	if(LuaDebugger.isProntToConsole == 1 or LuaDebugger.isProntToConsole == 3) then
+		debugger_print(...)
+	end
+	if(LuaDebugger.isProntToConsole == 1 or LuaDebugger.isProntToConsole == 2) then
+		if(debug_server) then
+			local arg = {...}    --这里的...和{}符号中间需要有空格号，否则会出错  
+			local str = ""
+			for k, v in pairs(arg) do
+				str = str .. tostring(v) .. "\t"
+			end
+			local sendMsg = {
+				event = LuaDebugger.event.C2S_LuaPrint,
+				data = {msg = str}
+			}
+			local sendStr = json.encode(sendMsg)
+			debug_server:send(sendStr .. "__debugger_k0204__")
+		end
+	end
+end
 ----=============================工具方法=============================================
 local debug_hook = nil
 local function debugger_strSplit(input, delimiter)

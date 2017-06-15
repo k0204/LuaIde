@@ -80,39 +80,10 @@ export class ProviderUtils {
         }
         return commentStr;
     }
-
-
-    public static getSelfToModuleName(tokens: Array<TokenInfo>, lp: LuaParse) {
-        var index: number = tokens.length - 1;
-        while (true) {
-            CLog();
-            if (index < 0) break;
-            var token: TokenInfo = tokens[index]
-            if (lp.consume('function', token, TokenTypes.Keyword)) {
-                var nextToken: TokenInfo = tokens[index + 1]
-                if (nextToken.type == TokenTypes.Identifier) {
-                    var nextToken1: TokenInfo = tokens[index + 2]
-                    if (lp.consume(':', nextToken1, TokenTypes.Punctuator)) {
-                        var moduleName: string = nextToken.value;
-                        return moduleName;
-
-                    }
-
-                    else index--
-                } else {
-                    index--;
-
-                }
-            } else {
-                index--;
-            }
-        }
-        return null
-    }
     public static getSelfToModuleNameAndStartTokenIndex(uri: vscode.Uri, tokens: Array<TokenInfo>, lp: LuaParse): any {
         var index: number = tokens.length - 1;
         while (true) {
-            CLog();
+            
             if (index < 0) break;
             var token: TokenInfo = tokens[index]
             if (lp.consume('function', token, TokenTypes.Keyword)) {
@@ -129,8 +100,9 @@ export class ProviderUtils {
                             functionNameToken = tokens[index + 3]
                         }
                         if (functionNameToken) {
-                            if (lp.luaInfoManager.getFcim(uri)) {
-                                range = lp.luaInfoManager.getFcim(uri).getSymbolEndRange(functionNameToken.value)
+                            if (lp.luaInfoManager.getFcimByPathStr(uri.path)) {
+                                var name = nextToken.value + nextToken1.value + functionNameToken.value
+                                range = lp.luaInfoManager.getFcimByPathStr(uri.path).getSymbolEndRange(name)
                             } else {
                                 return {}
                             }

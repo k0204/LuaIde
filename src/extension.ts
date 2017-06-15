@@ -21,6 +21,7 @@ import vscode = require('vscode');
 import { ExtensionManager } from "./luatool/ex/ExtensionManager"
 
 import { AutoLuaComment } from "./luatool/ex/AutoLuaComment";
+import { ConstInfo } from "./ConstInfo";
 
 
 
@@ -28,16 +29,18 @@ let diagnosticCollection: vscode.DiagnosticCollection;
 let currentDiagnostic: vscode.Diagnostic;
 export function activate(context: vscode.ExtensionContext) {
 
-
+	var luaCodeExtension = vscode.extensions.getExtension(ConstInfo.extensionLuaCodeConfig)
+	
+	var luaIdeExtension = vscode.extensions.getExtension(ConstInfo.extensionLuaIdeConfig)
+	if((luaCodeExtension != null && luaCodeExtension.isActive) || (luaIdeExtension != null && luaIdeExtension.isActive)){
+		return;
+	}
 	var em = new ExtensionManager(context);
-
 	diagnosticCollection = vscode.languages.createDiagnosticCollection('lua');
-
 	let luaParse = new LuaParse(diagnosticCollection)
-
 	context.subscriptions.push(
 		vscode.languages.registerCompletionItemProvider(LUA_MODE,
-			new LuaCompletionItemProvider(), '.', ":",'"'));
+			new LuaCompletionItemProvider(), '.', ":",'"',"[","@"));
 	context.subscriptions.push(
 		vscode.languages.registerDefinitionProvider(LUA_MODE, new LuaDefinitionProvider()));
 	context.subscriptions.push(vscode.languages.registerDocumentSymbolProvider(LUA_MODE,
@@ -68,7 +71,8 @@ export function activate(context: vscode.ExtensionContext) {
 			parseLuaFile()
 			return;
 		}
-		if (uri.fsPath.indexOf("FileTemplates") > -1 || uri.fsPath.indexOf("FunTemplate") > -1) {
+
+		if (uri.fsPath.toLowerCase().indexOf("filetemplates") > -1 || uri.fsPath.toLowerCase().indexOf("funtemplate") > -1) {
 			index++;
 			parseLuaFile()
 			return;
@@ -101,29 +105,29 @@ export function activate(context: vscode.ExtensionContext) {
 			value.forEach(element => {
 				uris.push(element);
 			});
-			 console.log(uris.length)
+			//  console.log(uris.length)
 			parseLuaFile();
 		})
 
 	vscode.workspace.onDidSaveTextDocument(event => {
-		var fileInfo = fs.statSync(event.uri.fsPath)
-		var kbSize = fileInfo.size / 1024
-		if(kbSize > em.luaIdeConfigManager.maxFileSize){
-			return;
-		}
-		if (ExtensionManager.em.luaIdeConfigManager.changeTextCheck) {
+		
+		
 			if (event.languageId == "lua") {
-				if (event.uri.fsPath.indexOf("FileTemplates") > -1 || event.uri.fsPath.indexOf("FunTemplate") > -1) {
+				var fileInfo = fs.statSync(event.uri.fsPath)
+				var kbSize = fileInfo.size / 1024
+				if(kbSize > em.luaIdeConfigManager.maxFileSize){
+					return;
+				}
+				LuaFileCompletionItems.getLuaFileCompletionItems().addCompletion(event.uri,false)
+				if (event.uri.fsPath.toLowerCase().indexOf("filetemplates") > -1 || event.uri.fsPath.toLowerCase().indexOf("funtemplate") > -1) {
 					return
 				}
 				
 				var uri = event.fileName
 				luaParse.Parse(event.uri, event.getText())
-
 			}
-		}
-
 	});
+	
 	vscode.workspace.onDidChangeTextDocument(event => {
 		var fileInfo = fs.statSync(event.document.uri.fsPath)
 		var kbSize = fileInfo.size / 1024
@@ -133,14 +137,17 @@ export function activate(context: vscode.ExtensionContext) {
 		if(AutoLuaComment.checkComment(event)){
 			
 		}
-		if (event.document.languageId == "lua") {
-			if (event.document.uri.fsPath.indexOf("FileTemplates") > -1 || event.document.uri.fsPath.indexOf("FunTemplate") > -1) {
-				return
-			}
-			
-			var uri = event.document.fileName
-			luaParse.Parse(event.document.uri, event.document.getText(),false)
+		if (ExtensionManager.em.luaIdeConfigManager.changeTextCheck) {
+			if (event.document.languageId == "lua") {
 
+				if (event.document.uri.fsPath.toLowerCase().indexOf("filetemplates") > -1 || event.document.uri.fsPath.toLowerCase().indexOf("funtemplate") > -1) {
+					return
+				}
+				
+				var uri = event.document.fileName
+				luaParse.Parse(event.document.uri, event.document.getText(),false)
+
+			}
 		}
 	})
 }

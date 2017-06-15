@@ -105,7 +105,7 @@ export function createFunction(e) {
             var paramStr: string = ""
             for (var index = 0; index < args.length; index++) {
                 var arg = args[index]
-                paramDescStr += lineText + "--@" + arg + " \n"
+                paramDescStr += lineText + "--@" + arg + ": \n"
                 paramStr += arg + " ,"
             }
             paramStr = paramStr.substring(0, paramStr.length - 2)

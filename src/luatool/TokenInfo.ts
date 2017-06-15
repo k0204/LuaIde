@@ -3,6 +3,7 @@
 import { Range } from 'vscode-languageclient';
 import { LuaParse } from './LuaParse';
 import { CLog } from './Utils'
+import { LuaFiledCompletionInfo } from "./provider/LuaFiledCompletionInfo";
 
 
 
@@ -137,6 +138,7 @@ export class LuaInfo {
             return;
         }
         LuaParse.lp.luaInfoManager.addCompletionItem(this, token)
+        
         //  LuaParse.lp.luaInfoManager.addFiledLuaInfo(this,token);
 
         // this.endToken = token;
@@ -329,6 +331,7 @@ export class TokenInfo {
     public value: any = '<eof>';
     public line: number = 0;
     public lineStart: number = 0;
+    public nextToken:TokenInfo;
     public range: LuaRange = null;
     public error: LuaError = null;
     public index: number;

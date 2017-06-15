@@ -26,6 +26,7 @@ export class LuaForLogic {
                 return false
             }
             var pluaInfo: LuaInfo = new LuaInfo(nextToken1)
+            pluaInfo.isLocal = true
                 pluaInfo.setEndToken(nextToken1)
             if (this.lp.consume(',', nextToken2, TokenTypes.Punctuator)) {
                 this.lp.tokenIndex += 2
@@ -55,6 +56,7 @@ export class LuaForLogic {
     private checkForI(parent: LuaInfo, startToken: TokenInfo): boolean {
         var nextToken1 = this.lp.getNextToken(null)
         var luaInfo: LuaInfo = new LuaInfo(nextToken1);
+        luaInfo.isLocal = true
         parent.type = LuaInfoType.FOR_I
 
         var nextToken2 = this.lp.getNextToken("for 循环未完成");
@@ -105,6 +107,7 @@ export class LuaForLogic {
                     return false
                 }
                 var pluaInfo: LuaInfo = new LuaInfo(tokenInfo1)
+                pluaInfo.isLocal = true
                 pluaInfo.setEndToken(tokenInfo1)
                 if (this.lp.consume('in', tokenInfo2, TokenTypes.Keyword)) {
                     break;

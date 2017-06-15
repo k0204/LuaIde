@@ -22,11 +22,7 @@ export class LuaDocumentSymbolProvider implements vscode.DocumentSymbolProvider 
         
         return new Promise<vscode.SymbolInformation[]>((resolve, reject) => {
 		
-            return resolve(LuaParse.lp.luaInfoManager.getFcim(document.uri).symbols);
+            return resolve(LuaParse.lp.luaInfoManager.getFcimByPathStr(document.uri.path).symbols);
     })
-        
-                
-         
-		
 	}
 }

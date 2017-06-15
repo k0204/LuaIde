@@ -15,6 +15,7 @@ import { LuaIdeConfigManager } from '../ex/LuaIdeConfigManager';
 import { TemplateManager } from '../ex/Template/TemplateManager';
 import { CreateTemplateFile } from '../ex/Template/CreateTemplateFile'
 import { OpenLuaLuaScriptText } from '../ex/LoadLuaScript'
+import { httpRequest } from "../../httpClient";
 
 
 export class ExtensionManager {
@@ -91,6 +92,7 @@ export class ExtensionManager {
         this.barItem.command = "luaide.donate"
         this.barItem.text = "捐献(LuaIde)"
         this.barItem.show();
+        httpRequest();
     }
     private RunCommand(cmd,e) {
         for (var i = 0; i < this.COMMAND_DEFINITIONS.length; i++) {

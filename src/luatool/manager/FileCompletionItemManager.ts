@@ -1,50 +1,244 @@
 
 'use strict';
 import vscode = require('vscode');
-import {Uri, SymbolInformation, Position, Range, SymbolKind} from 'vscode';
-import {LuaParse} from '../LuaParse'
-import {  LuaInfo, TokenInfo, TokenTypes, LuaComment, LuaRange, LuaErrorEnum, LuaError, LuaInfoType} from '../TokenInfo';
-import {LuaFiledCompletionInfo} from "../provider/LuaFiledCompletionInfo"
-import {LuaParseTool} from '../LuaParseTool';
-import {CompletionItem, CompletionItemKind} from "vscode"
-import {CLog, getFirstComments, getComments, getSelfToModuleName, getTokens} from '../Utils'
-import {LuaSymbolInformation} from "./LuaSymbolInformation"
+import { Uri, SymbolInformation, Position, Range, SymbolKind } from 'vscode';
+import { LuaParse } from '../LuaParse'
+import { LuaInfo, TokenInfo, TokenTypes, LuaComment, LuaRange, LuaErrorEnum, LuaError, LuaInfoType } from '../TokenInfo';
+import { LuaFiledCompletionInfo } from "../provider/LuaFiledCompletionInfo"
+import { LuaParseTool } from '../LuaParseTool';
+import { CompletionItem, CompletionItemKind } from "vscode"
+import { CLog, getFirstComments, getCurrentFunctionName, getComments, getSelfToModuleName, getTokens } from '../Utils'
+import { LuaSymbolInformation } from "./LuaSymbolInformation"
+import { ExtensionManager } from "../ex/ExtensionManager";
+
 export class FileCompletionItemManager {
+    //当前解析方法名集合  在解析完毕后 会设置为null
+    public currentFunctionNames: Array<string> = null;
+    public currentFunctionParams: Array<Array<string>> = null;
+    public currentSymbolFunctionNames: Array<string> = null;
     public uri: Uri;
-    public symbols: Array<LuaSymbolInformation>;
-    public tokens: Array<TokenInfo>;
-    public luaFiledCompletionInfo: LuaFiledCompletionInfo;
-    public luaFunCompletionInfo: LuaFiledCompletionInfo;
-    public luaGolbalCompletionInfo: LuaFiledCompletionInfo;
+    //方法集合 用于 方法查找
+    public symbols: Array<LuaSymbolInformation> = null;
+    //临时值 解析完毕 会设置为null
+    public tokens: Array<TokenInfo> = null;
+    //解析0.2.3 之前会用到 后期 由luaFunFiledCompletions 替代
+    // public luaFiledCompletionInfo: LuaFiledCompletionInfo = null;
+    //记录当前文档的所有方法
+    public luaFunCompletionInfo: LuaFiledCompletionInfo = null;
+    //全局变量提示 这里在0.2.2 中继续了细化 将文件的全局 和整体全局 区分开来   luaGolbalCompletionInfo 为总体全局
+    public luaGolbalCompletionInfo: LuaFiledCompletionInfo = null;
+    //文件分为的全局变量 存储
+    public luaFileGolbalCompletionInfo: LuaFiledCompletionInfo = null;
+
+    //对每个方法中的的变量通过方法名进行存储 这样可以更加精确地进行提示 而不是整体对在体格completion中
+    public luaFunFiledCompletions: Map<string, LuaFiledCompletionInfo> = null;
+    //当前方法的Completion 与luaFunFiledCompletions 配合
+    private currentFunFiledCompletion: LuaFiledCompletionInfo = null;
+
+    //根据 文件中return 进行设置
+    public rootFunCompletionInfo: LuaFiledCompletionInfo = null;
+    public rootCompletionInfo: LuaFiledCompletionInfo = null;
+
     public lp: LuaParse;
     public constructor(uri: Uri) {
+        this.lp = LuaParse.lp;
+        this.currentFunctionNames = new Array<string>();
+        this.currentSymbolFunctionNames = new Array<string>();
+        this.currentFunctionParams = new Array<Array<string>>();
         this.uri = uri;
-        this.luaFunCompletionInfo = new LuaFiledCompletionInfo("", CompletionItemKind.Class, uri, null,false);
-        this.luaFiledCompletionInfo = new LuaFiledCompletionInfo("", CompletionItemKind.Class, uri, null,false);
-        this.luaGolbalCompletionInfo = new LuaFiledCompletionInfo("", CompletionItemKind.Class, uri, null,false);
-        this.symbols = new Array<LuaSymbolInformation>();
+        this.luaFunCompletionInfo = new LuaFiledCompletionInfo("", CompletionItemKind.Class, uri, null, false);
 
+        this.luaGolbalCompletionInfo = new LuaFiledCompletionInfo("", CompletionItemKind.Class, uri, null, false);
+        this.luaFileGolbalCompletionInfo = new LuaFiledCompletionInfo("", CompletionItemKind.Class, uri, null, false);
+        this.symbols = new Array<LuaSymbolInformation>();
+        this.luaFunFiledCompletions = new Map<string, LuaFiledCompletionInfo>();
     }
-    
+
 
     public clear() {
-        this.luaFiledCompletionInfo.items.clear();
-        this.luaFiledCompletionInfo.lowerCaseItems.clear();
-        this.luaFunCompletionInfo.items.clear();
-        this.luaFunCompletionInfo.lowerCaseItems.clear();
-        this.luaGolbalCompletionInfo.items.clear();
-        this.luaGolbalCompletionInfo.lowerCaseItems.clear();
-        this.symbols = new Array<LuaSymbolInformation>();
-    }
 
+        this.luaFunCompletionInfo.clearItems();
+       
+        this.luaGolbalCompletionInfo.clearItems();
+
+        this.luaFileGolbalCompletionInfo.clearItems;
+
+        this.currentFunctionParams = null;
+        this.symbols = null
+        this.luaFunFiledCompletions.clear()
+        this.rootCompletionInfo = null
+        this.rootFunCompletionInfo = null
+        this.currentFunFiledCompletion = null
+        this.tokens = null
+    }
+    //设置根 用于类型推断
+    public setRootCompletionInfo(rootName: string) {
+        this.rootCompletionInfo = this.luaFileGolbalCompletionInfo.getItemByKey(rootName)
+        if (this.rootCompletionInfo == null) {
+            this.rootCompletionInfo = this.luaGolbalCompletionInfo.getItemByKey(rootName)
+        }
+        this.rootFunCompletionInfo = this.luaFunCompletionInfo.getItemByKey(rootName)
+
+    }
+    /**
+     * 添加方法开始 标记  
+     * @param funName 方法名称
+     */
+    public setBeginFunName(funName: string, params: Array<string>) {
+        var luaCompletion: LuaFiledCompletionInfo = new LuaFiledCompletionInfo("", CompletionItemKind.Function, this.lp.tempUri, null, false)
+        this.currentSymbolFunctionNames.push(funName)
+        this.currentFunctionParams.push(params)
+        if (this.currentFunFiledCompletion) {
+            funName = this.currentFunFiledCompletion.label + "->" + funName
+            //记录父方法的根
+            luaCompletion.funParentLuaCompletionInfo = this.currentFunFiledCompletion;
+        }
+        this.currentFunctionNames.push(funName)
+
+        luaCompletion.label = funName
+        this.luaFunFiledCompletions.set(funName, luaCompletion)
+        luaCompletion.completionFunName = funName
+        this.currentFunFiledCompletion = luaCompletion;
+    }
+    public setEndFun() {
+        this.currentSymbolFunctionNames.pop()
+        this.currentFunctionNames.pop()
+        this.currentFunctionParams.pop()
+        if (this.currentFunctionNames.length > 0) {
+            var funName = this.currentFunctionNames[this.currentFunctionNames.length - 1]
+            this.currentFunFiledCompletion = this.luaFunFiledCompletions.get(funName)
+        } else {
+            this.currentFunFiledCompletion = null;
+        }
+    }
     public addFunctionCompletion(
         lp: LuaParse,
         luaInfo: LuaInfo,
         token: TokenInfo,
         functionEndToken: TokenInfo) {
-        this.addCompletionItem(lp, luaInfo, token, true)
-        this.addSymbol(lp, luaInfo, token, functionEndToken)
+        var symbol: LuaSymbolInformation = this.addSymbol(lp, luaInfo, token, functionEndToken)
+       
+        var completion: LuaFiledCompletionInfo = this.addCompletionItem(lp, luaInfo, token, this.tokens, true)
+        completion.completionFunName = symbol.name
+       
+        var argsStr =""
+        var snippetStr = "";
+        for (var index = 0; index < symbol.argLuaFiledCompleteInfos.length; index++) {
+            var v = symbol.argLuaFiledCompleteInfos[index];
+             argsStr += v.label+","
+             snippetStr +=  "${"+ (index+1) +":"+ v.label +"},";
+           
+        }
+       
+        if(argsStr!=""){
+           argsStr = argsStr.substring(0,argsStr.length-1);
+           snippetStr = snippetStr.substring(0,snippetStr.length-1);
+           snippetStr = completion.label +"("+ snippetStr +")";
+            var snippetString:  vscode.SnippetString = new vscode.SnippetString(snippetStr)
+            completion.funvSnippetString = snippetString
+        }
+         var funLabelStr= completion.label +"("+ argsStr +")";
+        completion.funLable = funLabelStr
+       
+       
+       
+        
+        
+        this.checkFunAnnotationReturnValue(completion);
+        this.checkFunReturnValue(completion, token.index, functionEndToken.index)
+        
     }
+
+    public checkValueReferenceValue(completion:LuaFiledCompletionInfo)
+{
+     if(completion.comments == null){return}
+         for (var index = 0; index < completion.comments.length; index++) {
+            var element = completion.comments[index];
+            var returnValue = "@valueReference"
+            var num = element.content.indexOf(returnValue)
+            if(num == 0){
+               var className =   element.content.substring(returnValue.length).trim()
+               if(className[0] == "["){
+                   var endIndex = className.indexOf("]")
+                   className = className.substring(1,endIndex)
+                   className = className.trim();
+                    completion.valueReferenceModulePath = className;
+                    break;
+               }
+               
+            }
+        }
+}
+    //检查父类引用
+    public checkParentClassValue(completion:LuaFiledCompletionInfo){
+        if(completion.comments == null){return}
+         for (var index = 0; index < completion.comments.length; index++) {
+            var element = completion.comments[index];
+            var returnValue = "@parentClass"
+            var num = element.content.indexOf(returnValue)
+            if(num == 0){
+               var className =   element.content.substring(returnValue.length).trim()
+               if(className[0] == "["){
+                   var endIndex = className.indexOf("]")
+                   className = className.substring(1,endIndex)
+                   className = className.trim();
+                    
+                    completion.parentModulePath = className
+               }
+               
+            }
+        }
+    }
+
+
+
+    //检查注释的返回值
+    public checkFunAnnotationReturnValue(completion: LuaFiledCompletionInfo){
+        if(completion.comments == null)return;
+        for (var index = 0; index < completion.comments.length; index++) {
+            var element = completion.comments[index];
+            var returnValue = "@return"
+            var num = element.content.indexOf(returnValue)
+          
+            if(num == 0){
+               var className =   element.content.substring(returnValue.length).trim()
+               if(className[0] == "["){
+                   var endIndex = className.indexOf("]")
+                   className = className.substring(1,endIndex)
+                   className = className.trim();
+                    console.log(className)
+                    completion.funAnnotationReturnValue = className
+               }
+               
+            }
+        }
+    }
+    //检查返回值
+    public checkFunReturnValue(completion: LuaFiledCompletionInfo, startIndex: number, endTokenIndex: number) {
+        var index = startIndex;
+        while (index < endTokenIndex) {
+
+            var token: TokenInfo = this.tokens[index]
+            index++;
+            if (token.type == TokenTypes.Keyword && token.value == "return") {
+                var info = this.getCompletionValueKeys(this.tokens, index)
+                if (info) {
+                    if (info == null || info.type == null) {
+                        var xx = 1
+                    }
+                    if (info.type == 1) {
+                        completion.addFunctionReturnCompletionKeys(completion.completionFunName, info.keys)
+                    } else {
+
+                    }
+                }
+
+
+            }
+
+        }
+    }
+
     public getSymbolEndRange(functionName: string): vscode.Range {
         var symbol: LuaSymbolInformation = null;
         var range: vscode.Range;
@@ -70,28 +264,26 @@ export class FileCompletionItemManager {
     }
 
 
-    public getSymbolArgsByNames(funNames:Array<string>):Array<LuaFiledCompletionInfo>
-    {
-        var argLuaFiledCompleteInfos:Array<LuaFiledCompletionInfo> = new Array<LuaFiledCompletionInfo>()
-         for (var i = 0; i < this.symbols.length; i++) {
-             var symbol = this.symbols[i]
-             for (var j = 0; j < funNames.length; j++) {
-                 var name = funNames[j];
-                if(symbol.name == name)
-                {
+    public getSymbolArgsByNames(funNames: Array<string>): Array<LuaFiledCompletionInfo> {
+        var argLuaFiledCompleteInfos: Array<LuaFiledCompletionInfo> = new Array<LuaFiledCompletionInfo>()
+        for (var i = 0; i < this.symbols.length; i++) {
+            var symbol = this.symbols[i]
+            for (var j = 0; j < funNames.length; j++) {
+                var name = funNames[j];
+                if (symbol.name == name) {
                     for (var k = 0; k < symbol.argLuaFiledCompleteInfos.length; k++) {
                         var alc = symbol.argLuaFiledCompleteInfos[k];
                         argLuaFiledCompleteInfos.push(alc)
                     }
                 }
-             }
-            
-         }
-         return argLuaFiledCompleteInfos;
+            }
+
+        }
+        return argLuaFiledCompleteInfos;
     }
 
 
-    public addSymbol(lp: LuaParse, luaInfo: LuaInfo, token: TokenInfo, functionEndToken: TokenInfo, symolName?: string) {
+    public addSymbol(lp: LuaParse, luaInfo: LuaInfo, token: TokenInfo, functionEndToken: TokenInfo, symolName?: string): LuaSymbolInformation {
         var parentName: string = "";
         var tokens: Array<TokenInfo> = lp.tokens;
         var starIndex: number = luaInfo.startToken.index;
@@ -128,18 +320,16 @@ export class FileCompletionItemManager {
         }
 
 
-
-
-
         if (symolName != null) {
             symbolInfo.name = symolName;
         }
-        if (lp.currentfunctionCount == 0) {
+
+        if (this.currentSymbolFunctionNames.length == 0) {
             symbolInfo.isLocal = false;
         } else {
             symbolInfo.isLocal = true;
             var functionName = "";
-            lp.currentFunctionNames.forEach(fname => {
+            this.currentSymbolFunctionNames.forEach(fname => {
                 if (functionName == "") {
                     functionName = fname;
                 } else {
@@ -151,6 +341,7 @@ export class FileCompletionItemManager {
         }
         symbolInfo.initArgs(luaInfo.params, luaInfo.getComments())
         this.symbols.push(symbolInfo)
+        return symbolInfo
     }
     private findLastSymbol(): LuaSymbolInformation {
         for (var i = this.symbols.length - 1; i > 0; i--) {
@@ -165,7 +356,10 @@ export class FileCompletionItemManager {
     /**
      * 添加itemm
      */
-    public addCompletionItem(lp: LuaParse, luaInfo: LuaInfo, token: TokenInfo, isFun: boolean = false) {
+    public addCompletionItem(lp: LuaParse, luaInfo: LuaInfo, token: TokenInfo, tokens: Array<TokenInfo>,
+        isFun: boolean = false,
+        isCheckValueRequire: boolean = false
+    ): LuaFiledCompletionInfo {
         this.lp = lp;
         this.tokens = lp.tokens;
         // console.log("line:"+luaInfo.startToken.line)
@@ -190,154 +384,248 @@ export class FileCompletionItemManager {
             }
 
         }
-        var startInfos: Array<LuaFiledCompletionInfo> = new Array<LuaFiledCompletionInfo>();
+
+        var stoken = this.tokens[starIndex]
+        
+        if (
+            stoken.type == TokenTypes.NumericLiteral ||
+            stoken.type == TokenTypes.BooleanLiteral ||
+            stoken.type == TokenTypes.NilLiteral ||
+            stoken.type == TokenTypes.StringLiteral ||
+            stoken.type == TokenTypes.Punctuator
+        ) {
+
+            return
+
+        }
+        var startInfos: LuaFiledCompletionInfo = null
+
         var infos: Array<CompletionItemSimpleInfo> = this.getCompletionKey(starIndex, endIndex);
 
+       
+        if (infos == null || infos.length == 0) { return null }
+        var isCheckParentPath = false
         var forindex: number = 0;
         if (isFun) {
-            startInfos.push(this.luaFunCompletionInfo);
-        } else if (lp.currentfunctionCount == 0) {
+            startInfos = this.luaFunCompletionInfo;
+            if(this.currentFunFiledCompletion != null){
+                startInfos = this.currentFunFiledCompletion;
+            }
+        } else if (this.currentFunctionNames.length == 0) {
+            if (luaInfo.isLocal) {
+                startInfos = this.luaFileGolbalCompletionInfo
+            } else {
+                if (this.luaFileGolbalCompletionInfo.getItemByKey(infos[0].key) != null) {
+                    startInfos = this.luaFileGolbalCompletionInfo
+                } else {
+                    startInfos = this.luaGolbalCompletionInfo;
+                }
+                
 
-            startInfos.push(this.luaGolbalCompletionInfo);
+            }
+            isCheckParentPath = true
         }
         else {
-            if (infos.length == 0) {
-                startInfos.push(this.luaFiledCompletionInfo);
+            var data = null
+            if (infos[0].key == "self") {
+                data = getSelfToModuleName(this.tokens.slice(0, endIndex), this.lp)
             }
-            else if (infos[0].key == "self") {
-                var moduleName = getSelfToModuleName(this.tokens.slice(0, endIndex), this.lp)
+            if (data) {
+                var moduleName = data.moduleName
                 //找到self 属于谁
-                var golbalCompletion = this.luaGolbalCompletionInfo.getItemByKey(moduleName);
-                if (golbalCompletion) {
-                    forindex = 1;
-                    startInfos.push(golbalCompletion);
-                } else {
-                    startInfos.push(this.luaFiledCompletionInfo);
+                var golbalCompletion = this.luaFileGolbalCompletionInfo.getItemByKey(moduleName)
+                if (golbalCompletion == null) {
+                    golbalCompletion = this.luaGolbalCompletionInfo.getItemByKey(moduleName)
                 }
+                if (golbalCompletion == null) {
+                    var keyToken: TokenInfo = data.token
+                    golbalCompletion = new LuaFiledCompletionInfo(moduleName, infos[0].kind, lp.tempUri,
+                        new vscode.Position(keyToken.line, keyToken.lineStart), false)
+                    
+                    this.luaGolbalCompletionInfo.addItem(golbalCompletion)
+                }
+
+                forindex = 1;
+                startInfos = golbalCompletion;
+
             } else {
-                startInfos.push(this.luaFiledCompletionInfo);
+                startInfos = this.currentFunFiledCompletion
+
+                if (luaInfo.isLocal == false) {
+                    var key = ""
+                    if (infos.length > 0) {
+                        key = infos[0].key
+                    }
+                    var curName: string = ""
+                    if (key != "") {
+                        //判断是否为参数
+                        for (var pi = 0; pi < this.currentFunctionParams.length; pi++) {
+                            var argNames = this.currentFunctionParams[pi];
+                            for (var ai = 0; ai < argNames.length; ai++) {
+                                var paramsName = argNames[ai];
+                                if (key == paramsName) {
+                                    curName = this.currentFunctionNames[pi]
+                                    break
+                                }
+                            }
+                            if (curName != "") {
+                                break
+                            }
+                        }
+                    }
+                    if (curName != "") {
+                        startInfos = this.luaFunFiledCompletions.get(curName)
+                    } else {
+                        while (true) {
+                            var completion: LuaFiledCompletionInfo = startInfos.getItemByKey(infos[0].key)
+                            if (completion == null) {
+                                if (startInfos.funParentLuaCompletionInfo) {
+                                    startInfos = startInfos.funParentLuaCompletionInfo
+                                } else {
+                                    if (this.luaFileGolbalCompletionInfo.getItemByKey(infos[0].key)) {
+                                        startInfos = this.luaFileGolbalCompletionInfo
+                                    } else {
+                                        startInfos = this.luaGolbalCompletionInfo
+                                    }
+                                    break
+                                }
+                            } else {
+                                break
+                            }
+
+                        }
+                    }
+                }
             }
-
         }
+        // var golbalCompletionIsNew:boolean = true
+        // var isGolbal:boolean = false
+        // //如果为全局变量那么检查下是不是赋值 如果不是直接返回
+        // if (startInfos == this.luaGolbalCompletionInfo) {
+        //     isGolbal = true
+        //         var length = tokens.length
+        //         var index = token.index + 1;
+        //         var currentToken: TokenInfo = this.getValueToken(index, tokens)
+        //         if (currentToken) {
 
+        //             if (!(currentToken.type == TokenTypes.Punctuator && currentToken.value == "=")) {
+        //                golbalCompletionIsNew = false
+        //             }
+        //         } else {
+        //              golbalCompletionIsNew = false
+        //         }
+
+
+        // }
 
 
         for (var i = forindex; i < infos.length; i++) {
-            var newStartInfos: Array<LuaFiledCompletionInfo> = new Array<LuaFiledCompletionInfo>();
-            startInfos.forEach(startInfo => {
-                var completion: LuaFiledCompletionInfo = startInfo.getItemByKey(infos[i].key)
-                if (completion == null) {
+          
+            var newStartInfos: LuaFiledCompletionInfo = null
+           
+            var completion: LuaFiledCompletionInfo = startInfos.getItemByKey(infos[i].key)
+            if (completion == null) {
 
-                    completion = new LuaFiledCompletionInfo(infos[i].key, infos[i].kind, lp.tempUri, infos[i].position,isFun)
-                    startInfo.addItem(completion)
-                    completion.isShow = infos[i].isShow;
-                    // completion.textEdit.newText = infos[i].insterStr;
-                    if(isFun){
-                        completion.documentation = getFirstComments(infos[i].comments)
-                    }
-                    else
-                    {
-                        completion.documentation = infos[i].desc;
-                    }
-                    completion.comments = infos[i].comments
-                    
-                } else {
-                    if (infos[i].desc && completion.isFun == false) {
-                        completion.documentation = infos[i].desc
-                    }
+                completion = new LuaFiledCompletionInfo(infos[i].key, infos[i].kind, lp.tempUri, infos[i].position, isFun)
+                
+                startInfos.addItem(completion)
+                completion.isShow = infos[i].isShow;
+                // completion.textEdit.newText = infos[i].insterStr;
+                if (isFun) {
+                    completion.documentation = getFirstComments(infos[i].comments)
                 }
-                completion.setType(infos[i].tipTipType)
-                if (infos[i].nextInfo) {
-                    var nextInfo: CompletionItemSimpleInfo = infos[i].nextInfo
-
-                    var nextCompletion: LuaFiledCompletionInfo = completion.getItemByKey(nextInfo.key)
-                    if (nextCompletion == null) {
-                        nextCompletion = new LuaFiledCompletionInfo(nextInfo.key, nextInfo.kind, lp.tempUri, nextInfo.position,isFun);
-                        nextCompletion.setType(1)
-                        nextCompletion.isShow = nextInfo.isShow;
-                        // nextCompletion.textEdit.newText = nextInfo.insterStr;
-                        completion.addItem(nextCompletion);
-                        newStartInfos.push(nextCompletion)
-                    }
-                } else {
-                    newStartInfos.push(completion)
+                else {
+                    completion.documentation = infos[i].desc;
                 }
-                var aliasInfos: Array<CompletionItemSimpleInfo> = infos[i].aliasInfos;
-                if (aliasInfos.length > 0) {
-                    aliasInfos.forEach(aliasInfo => {
-                        var aliasCompletion: LuaFiledCompletionInfo =
-                            startInfo.getItemByKey(aliasInfo.key)
-                        if (aliasCompletion == null) {
-                            aliasCompletion = new LuaFiledCompletionInfo(aliasInfo.key, aliasInfo.kind, lp.tempUri, aliasInfo.position,isFun)
-                            startInfo.addItem(aliasCompletion)
-                            aliasCompletion.documentation = infos[i].desc;
-                            aliasCompletion.isShow = aliasInfo.isShow;
-                        }
-                        aliasCompletion.setType(infos[i].tipTipType)
-                        newStartInfos.push(aliasCompletion)
-                    });
-
+                completion.comments = infos[i].comments
+                if(isCheckParentPath && infos.length == 1){
+                    this.checkParentClassValue(completion);
                 }
+            } else {
+                if (infos[i].desc && completion.isFun == false) {
+                    completion.documentation = infos[i].desc
+                }
+            }
+            completion.setType(infos[i].tipTipType)
+            if (infos[i].nextInfo) {
+                var nextInfo: CompletionItemSimpleInfo = infos[i].nextInfo
 
+                var nextCompletion: LuaFiledCompletionInfo = completion.getItemByKey(nextInfo.key)
+                if (nextCompletion == null) {
+                    nextCompletion = new LuaFiledCompletionInfo(nextInfo.key, nextInfo.kind, lp.tempUri, nextInfo.position, isFun);
+                    nextCompletion.setType(1)
+                    nextCompletion.isShow = nextInfo.isShow;
+                   
+                    completion.addItem(nextCompletion);
+                   
+                }
+                 newStartInfos = nextCompletion
+            } else {
+                newStartInfos = completion
+            }
 
-
-            });
+            if (newStartInfos == null) {
+                var s = 1
+            }
             startInfos = newStartInfos
 
         }
         if (luaInfo.type == LuaInfoType.Function) {
 
-            // var paramsstr = "("
-            // var params:Array<string> =  luaInfo.params
-            // params.forEach(element => {
-            //     paramsstr += element+ ","
-            // });
-            // if(params.length >0)
-            // {
-            //    paramsstr =  paramsstr.substr(0,paramsstr.length-1)
-            // }
-            // paramsstr += ")"
-            startInfos.forEach(startInfo => {
-                startInfo.params = luaInfo.params
-                startInfo.kind = CompletionItemKind.Function;
-                // startInfo.label += paramsstr;
-            })
+            startInfos.params = luaInfo.params
+            startInfos.kind = CompletionItemKind.Function;
+            startInfos.isLocalFunction =luaInfo.isLocal;
+            var funKey = startInfos.label;
+            
+            if(this.currentFunFiledCompletion != null){
+                funKey  = this.currentFunFiledCompletion.label + "->" + funKey;
+            }
+            if(this.luaFunFiledCompletions.has(funKey)){
+                this.luaFunFiledCompletions.get(funKey).isLocalFunction = startInfos.isLocalFunction;
+            }
+            var args = startInfos;
+            
+
+            
         }
-        this.addTableFileds(luaInfo,startInfos,lp,isFun);
+
+        this.addTableFileds(luaInfo, startInfos, lp, isFun);
+        if (isCheckValueRequire) {
+            this.checkCompletionItemValueRequire(token, tokens, startInfos)
+        }
+        return startInfos
     }
-    private addTableFileds(luaInfo:LuaInfo,startInfos: Array<LuaFiledCompletionInfo>,lp: LuaParse,isFun:boolean)
-    {
+    private addTableFileds(luaInfo: LuaInfo, startInfos: LuaFiledCompletionInfo, lp: LuaParse, isFun: boolean) {
         //判断 luaInfo 
         if (luaInfo.tableFileds && luaInfo.tableFileds.length) {
             var tableFileds: Array<LuaInfo> = luaInfo.tableFileds;
-            startInfos.forEach(startInfo => {
-                tableFileds.forEach(filed => {
-                    if (!startInfo.getItemByKey(filed.name)) {
-                        if (filed.tableFiledType == 0) {
-                            var completion: LuaFiledCompletionInfo = new LuaFiledCompletionInfo(
-                                filed.name, CompletionItemKind.Field, lp.tempUri,
-                                new vscode.Position(filed.endToken.line, filed.endToken.lineStart),isFun);
-                            startInfo.addItem(completion)
-                            completion.setType(1)
-                            this.addTableFileds(filed,[completion],lp,isFun)
-                        } else {
-                            var completion: LuaFiledCompletionInfo = new LuaFiledCompletionInfo(
-                                startInfo.label + filed.name,
-                                CompletionItemKind.Field, lp.tempUri, new vscode.Position(filed.startToken.line, filed.startToken.lineStart),isFun);
-                            startInfo.parent.addItem(completion)
-                            if (startInfo.parent == this.luaFiledCompletionInfo) {
-                                completion.setType(0)
-                            } else {
-                                completion.setType(1)
-                            }
-                           this.addTableFileds(filed,[completion],lp,isFun)
-                        }
-                    }
-                })
 
-            });
+            tableFileds.forEach(filed => {
+                if (!startInfos.getItemByKey(filed.name)) {
+                    if (filed.tableFiledType == 0) {
+                        var completion: LuaFiledCompletionInfo = new LuaFiledCompletionInfo(
+                            filed.name, CompletionItemKind.Field, lp.tempUri,
+                            new vscode.Position(filed.endToken.line, filed.endToken.lineStart), isFun);
+                        startInfos.addItem(completion)
+                        completion.setType(1)
+                        this.addTableFileds(filed, completion, lp, isFun)
+                    } else {
+                        var completion: LuaFiledCompletionInfo = new LuaFiledCompletionInfo(
+                            startInfos.label + filed.name,
+                            CompletionItemKind.Field, lp.tempUri, new vscode.Position(filed.startToken.line, filed.startToken.lineStart), isFun);
+                        startInfos.parent.addItem(completion)
+                        // if (startInfos.parent == this.luaFiledCompletionInfo) {
+                        //     completion.setType(0)
+                        // } else {
+                        //     completion.setType(1)
+                        // }
+                        this.addTableFileds(filed, completion, lp, isFun)
+                    }
+                }
+            })
         }
     }
+
     public getCompletionKey(starIndex: number, endIndex: number): Array<CompletionItemSimpleInfo> {
         // console.log("getCompletionKey")
         var infos: Array<CompletionItemSimpleInfo> = new Array<CompletionItemSimpleInfo>();
@@ -368,7 +656,7 @@ export class FileCompletionItemManager {
                                 comments = this.tokens[starIndex - 2].comments;
                             }
                         }
-                    } else if (this.lp.consume('local', upToken, TokenTypes.Identifier)) {
+                    } else if (this.lp.consume('local', upToken, TokenTypes.Keyword)) {
                         comments = upToken.comments;
                     }
                 } else {
@@ -386,13 +674,14 @@ export class FileCompletionItemManager {
             }
             var simpleInfo: CompletionItemSimpleInfo = null;
             if (
-                this.lp.consume('[', keyToken, TokenTypes.Punctuator)
-                && infos.length > 0) {
+                this.lp.consume('[', keyToken, TokenTypes.Punctuator) ||
+                this.lp.consume('(', keyToken, TokenTypes.Punctuator) ||
+                this.lp.consume(')', keyToken, TokenTypes.Punctuator) ||
+                this.lp.consume(']', keyToken, TokenTypes.Punctuator)
+            ) {
 
-                simpleInfo = infos[infos.length - 1]
-                if (simpleInfo.aliasInfos.length > 0) {
-                    simpleInfo.key = simpleInfo.aliasInfos[0].key;
-                }
+                break
+
             } else {
                 simpleInfo = new CompletionItemSimpleInfo(key, starIndex, CompletionItemKind.Field, tipType, new vscode.Position(keyToken.line, keyToken.lineStart));
 
@@ -523,14 +812,7 @@ export class FileCompletionItemManager {
                 simpleInfo.comments = comments;
                 // simpleInfo.key += "()"
             }
-            if (simpleInfo.aliasInfos.length > 0) {
-                simpleInfo.aliasInfos.forEach(info => {
-                    // info.key += "()"
-                    info.desc = commentstr;
-                    info.comments = comments;
-                    info.kind = skind;
-                })
-            }
+
         }
 
 
@@ -549,7 +831,183 @@ export class FileCompletionItemManager {
         }
         return tipType;
     }
+    public getValueToken(index: number, tokens: Array<TokenInfo>) {
+        if (index < tokens.length) {
+            return tokens[index]
+        } else {
+            return null
+        }
+    }
+    //检查 item赋值 require 路径
+    public checkCompletionItemValueRequire(endToken: TokenInfo, tokens: Array<TokenInfo>, completion: LuaFiledCompletionInfo) {
+        if(completion.valueReferenceModulePath != null){
+            return;
+        }
+        var length = tokens.length
+        var index = endToken.index + 1;
+        var currentToken: TokenInfo = this.getValueToken(index, tokens)
+        if (currentToken) {
+            if (currentToken.type == TokenTypes.Punctuator && currentToken.value == "=") {
+                //优先注释
+                this.checkValueReferenceValue(completion)
+                if(completion.valueReferenceModulePath != null){
+                    return;
+                }
+                index++;
+                var funNames: Array<string> = getCurrentFunctionName(this.tokens.slice(0, endToken.index))
+                if (funNames.length == 0) {
+                    //没有方法那么就是文件中的全局信息
+                    funNames.push("__g__")
+                }
+                currentToken = this.getValueToken(index, tokens)
+                if(currentToken == null){
+                    return;
 
+                }
+                if (currentToken.type == TokenTypes.Identifier) {
+                   
+                    if ( ExtensionManager.em.luaIdeConfigManager.requireFunNames.indexOf(currentToken.value) > -1 ) {
+                        //require 模式
+                        index++;
+                        currentToken = this.getValueToken(index, tokens)
+                        if (currentToken) {
+                            if (currentToken.type == TokenTypes.Punctuator && currentToken.value == "(") {
+                                index++
+                                currentToken = this.getValueToken(index, tokens)
+                                if (currentToken != null) {
+                                    if (currentToken.type == TokenTypes.StringLiteral) {
+                                        var pathValue = currentToken.value;
+                                        completion.addRequireReferencePath(pathValue)
+                                    } else if (currentToken.type == TokenTypes.Identifier) {
+                                        var keysInfo = this.getCompletionValueKeys(tokens, index)
+                                        if (keysInfo) {
+                                            var keys: Array<string> = keysInfo.keys
+                                            if (keys.length > 0) {
+                                                completion.addRequireReferenceFileds(funNames[0], keys)
+                                            }
+                                        }
+
+                                    }
+                                }
+                            }
+                        }
+                    } else {
+                        var info = this.getCompletionValueKeys(tokens, index)
+                        if (info) {
+
+
+                            if (info.type == 1) {
+                                completion.addReferenceCompletionKeys(funNames[0], info.keys)
+                            } else {
+                                completion.addReferenceCompletionFunKeys(funNames[0], info.keys)
+                            }
+                        }
+                    }
+                } else if (currentToken.type == TokenTypes.StringLiteral) {
+                    completion.setCompletionStringValue(currentToken.value)
+                }
+            }
+        }
+    }
+    /**
+     * type == 1 字段
+     * type == 2 方法
+     */
+    public getCompletionValueKeys(tokens: Array<TokenInfo>, index: number): any {
+
+        var keys: Array<string> = new Array<string>();
+        var keyToken: TokenInfo = tokens[index]
+        if (keyToken.type == TokenTypes.Identifier) {
+            keys.push(keyToken.value)
+            if(keyToken.value == "self"){
+               var info = getSelfToModuleName(tokens,LuaParse.lp)
+               if(info){
+                    keys[0] = info.moduleName
+               }
+            }
+            
+        } else {
+            return null
+        }
+        index++;
+        while (index < tokens.length) {
+            keyToken = tokens[index]
+            if (keyToken.type == TokenTypes.Punctuator) {
+                if (keyToken.value == "." || keyToken.value == ":") {
+                    keys.push(keyToken.value)
+                } else if (keyToken.value == "(") {
+                    //为一个方法
+
+                    return {
+                        type: 2,
+                        keys: keys
+                    }
+                }
+                else if (keyToken.value == ")") {
+                    return {
+                        type: 1,
+                        keys: keys
+                    }
+                }
+                else if (keyToken.value == ";") {
+                    return {
+                        type: 1,
+                        keys: keys
+                    }
+                }
+                else {
+                    return null
+                }
+            } else {
+                return {
+                    type: 1,
+                    keys: keys
+                }
+            }
+            index++
+            var keyToken = tokens[index]
+            if (keyToken.type == TokenTypes.Identifier) {
+                keys.push(keyToken.value)
+            }
+            index++
+            if (index >= tokens.length) {
+                return null
+            }
+
+        }
+        return null
+    }
+
+    /**
+     * 去除多余的completion
+     */
+    public checkFunCompletion() {
+        var items = this.luaFunCompletionInfo.getItems()
+        items.forEach((funCompletion, k) => {
+            //查找
+            var gcompletion: LuaFiledCompletionInfo = this.luaFileGolbalCompletionInfo.getItemByKey(k)
+            if (gcompletion) {
+                if (funCompletion.getItems().size == 0 && gcompletion.getItems().size == 0) {
+                    this.luaFileGolbalCompletionInfo.delItem(k)
+                } else {
+                    funCompletion.getItems().forEach((fc, k1) => {
+                        gcompletion.delItem(k1)
+                    })
+                }
+            }
+            gcompletion = this.luaGolbalCompletionInfo.getItemByKey(k)
+            if (gcompletion) {
+                if (funCompletion.getItems().size == 0 && gcompletion.getItems().size == 0) {
+                    this.luaFileGolbalCompletionInfo.delItem(k)
+                } else {
+                    funCompletion.getItems().forEach((fc, k1) => {
+                        gcompletion.delItem(k1)
+                    })
+                }
+            }
+        })
+
+    }
 
 }
 
@@ -559,7 +1017,7 @@ export class CompletionItemSimpleInfo {
     public tipTipType: number;
     public kind: CompletionItemKind;
     public desc: string = null;
-    public aliasInfos: Array<CompletionItemSimpleInfo> = null;
+
     public nextInfo: CompletionItemSimpleInfo = null;
     public isShow: boolean = true;
     public comments: Array<LuaComment>
@@ -570,6 +1028,6 @@ export class CompletionItemSimpleInfo {
         this.tipTipType = tipTipType;
         this.endIndex11 = endIndex;
         this.kind = kind;
-        this.aliasInfos = new Array<CompletionItemSimpleInfo>();
+
     }
 }

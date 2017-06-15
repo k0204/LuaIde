@@ -4,11 +4,18 @@ import {LuaParse} from '../LuaParse'
 import {LuaInfoManager} from '../LuaInfoManager'
 import {LuaFiledCompletionInfo} from "../provider/LuaFiledCompletionInfo"
 import {FileCompletionItemManager} from "../manager/FileCompletionItemManager"
-
+import { LuaFileCompletionItems } from "../manager/LuaFileCompletionItems";
 import {CLog, getTokens, isIdentifierPart, getSelfToModuleName} from "../Utils"
 import {  LuaInfo, TokenInfo, TokenTypes, LuaComment, LuaRange, LuaErrorEnum, LuaError, LuaInfoType} from '../TokenInfo';
 
 export function byteOffsetAt(document: vscode.TextDocument, position: vscode.Position): vscode.Location {
+
+    var lineText = document.lineAt(position.line).text;
+    if(lineText.trim().substring(0,2) == "--"){
+
+        return checkComment(lineText,position)
+    }
+    
     let offset = document.offsetAt(position);
     let text = document.getText();
     let byteOffset = 0;
@@ -133,7 +140,8 @@ export function byteOffsetAt(document: vscode.TextDocument, position: vscode.Pos
     }
     var isSelf: boolean = false;
     if (keyNames[0] == 'self') {
-        keyNames[0] = getSelfToModuleName(tokens, lp)
+        var data = getSelfToModuleName(tokens, lp)
+        keyNames[0] = data.moduleName
 
         isSelf = true
     }
@@ -184,7 +192,7 @@ export function byteOffsetAt(document: vscode.TextDocument, position: vscode.Pos
     if (isSelf == true && location == null) {
         var rootInfo: FileCompletionItemManager = luaManager.fileCompletionItemManagers.get(document.uri.path)
         if (rootInfo) {
-            var selfCInfo: LuaFiledCompletionInfo = rootInfo.luaFiledCompletionInfo;
+            var selfCInfo: LuaFiledCompletionInfo ;//= rootInfo.luaFiledCompletionInfo;
 
             keyNames[0] = 'self'
            
@@ -200,6 +208,22 @@ export function byteOffsetAt(document: vscode.TextDocument, position: vscode.Pos
     }
     return location;
 }
+
+function checkComment(line:string,position: vscode.Position){
+    var index1 = line.indexOf('[')
+    var index2 = line.indexOf(']');
+    var moduleName = line.substring(index1+1,index2)
+    if(position.character> index1 && position.character < index2){
+      var  uri =   LuaFileCompletionItems.getLuaFileCompletionItems().getUriCompletionByModuleName(moduleName)
+     
+       var location: vscode.Location =
+                    new vscode.Location(uri, new vscode.Position(0,0))
+                return location;
+    }
+
+}
+
+
 function getCompletionByKeyNams(cinfo: LuaFiledCompletionInfo, keyNames: Array<string>, type: number): LuaFiledCompletionInfo {
     var findInfo: LuaFiledCompletionInfo = cinfo;
     var i: number = 0
@@ -259,121 +283,7 @@ function getLocation(keyNames: Array<string>, luaManager: LuaInfoManager, type: 
         }
         }
     })
-    //    var fInfo: LuaFiledCompletionInfo;
-    //     for(var i = 0; i < keyNames.length;i++)
-    //     {
-    //         findInfos.forEach(f => {
-    //             if(f.label.toLocaleLowerCase() == keyNames[i].toLocaleLowerCase())
-    //             {
-    //                  fInfo = f;
-    //                  return
-    //             }
-
-    //         });
-    //         if(fInfo != null){
-    //             location = new vscode.Location(fInfo.uri, fInfo.position)
-    //             return location
-    //         }
-    //     }
-
-    //     return location
-
-
-
-    // for (var i = keyNames.length - 1; i >= 0; i--) {
-
-    //     var key = keyNames[i];
-
-    //     luaManager.fileCompletionItemManagers.forEach((v, k) => {
-    //     var tempInfo: LuaFiledCompletionInfo = null;
-    //         if (type == 1) {
-    //             tempInfo = v.luaFunCompletionInfo.getItemByKey(key,true)
-    //         }
-    //         else if(type == 2)
-    //         {
-    //             tempInfo = v.luaGolbalCompletionInfo.getItemByKey(key)
-    //         } 
-
-    //         if (tempInfo != null) {
-
-    //             if (type == 2) {
-    //                 notModlueInfos.push(tempInfo);
-    //                 console.log("length:" + tempInfo.items.values.length)
-    //                 notModlueInfosIndex.push(i)
-    //                 var filePath: string = tempInfo.uri.path
-    //                 var index: number = filePath.lastIndexOf('/') + 1
-    //                 var fileName = filePath.substr(index, filePath.length - index)
-    //                 fileName = fileName.replace(".lua", "");
-    //                 if (fileName.toLowerCase() == tempInfo.label.toLocaleLowerCase()) {
-    //                     cinfo = tempInfo;
-    //                     console.log("i:"+i);
-    //                     return;
-    //                 }
-    //             } else {
-    //                 cinfo = tempInfo;
-    //                 console.log("i:"+i);
-    //                 return;
-    //             }
-    //         }
-    //     })
-
-    //     if (cinfo != null) {
-
-    //         if (i == keyNames.length - 1) {
-    //             if (i == keyNames.length - 1) {
-    //                 var location: vscode.Location = new vscode.Location(cinfo.uri, cinfo.position)
-    //                 return location;
-    //             } else {
-
-    //             }
-    //         } else {
-    //             for (var j = i + 1; j < keyNames.length; j++) {
-
-    //                 cinfo = cinfo.getItemByKey(keyNames[j])
-    //                 if (cinfo) {
-    //                 } else {
-    //                     break;
-    //                 }
-    //             }
-    //             if (cinfo != null) {
-    //                 var location: vscode.Location = new vscode.Location(cinfo.uri, cinfo.position)
-    //                 return location;
-    //             }
-    //         }
-    //     }
-
-
-
-    // for (var j = 0; j < notModlueInfos.length; j++) {
-    //     var ninfo = notModlueInfos[j];
-
-    //     if (i == keyNames.length - 1) {
-    //         if (i == keyNames.length - 1) {
-    //             var location: vscode.Location = new vscode.Location(ninfo.uri, ninfo.position)
-    //             return location;
-    //         } else {
-
-    //         }
-    //     } else {
-    //         for (var k = notModlueInfosIndex[j]+1; k < keyNames.length; k++) {
-
-    //             ninfo = ninfo.getItemByKey(keyNames[k])
-    //             if (ninfo) {
-    //             } else {
-    //                 break;
-    //             }
-    //         }
-    //         if (ninfo != null) {
-    //             var location: vscode.Location = new vscode.Location(ninfo.uri, ninfo.position)
-    //             return location;
-    //         }
-    //     }
-
-    // }
-
-
-    // }
-    // return null;
+    
 }
 
 

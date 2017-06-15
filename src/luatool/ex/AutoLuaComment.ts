@@ -44,7 +44,7 @@ export class AutoLuaComment {
 
 
 
-                    console.log(lineText)
+                    // console.log(lineText)
                 }
             }
         }
@@ -149,7 +149,7 @@ export class AutoLuaComment {
                 params.forEach(param => {
                     insterText += tabStr+"--@" + param + ":\r\n";
                 })
-                insterText += tabStr+"--return \r\n"
+                insterText += tabStr+"--@return \r\n"
                 insterText += tabStr+"--==============================-"
                 return insterText
             } else {

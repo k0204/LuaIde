@@ -128,7 +128,7 @@ export class LuaSignatureHelpProvider implements SignatureHelpProvider {
 			}
 			if(keys.length == 1){
 				//检查是不是内部方法
-				var fcim: FileCompletionItemManager = lp.luaInfoManager.getFcim(document.uri)
+				var fcim: FileCompletionItemManager = lp.luaInfoManager.getFcimByPathStr(document.uri.path)
 				var curFunFcim:LuaSymbolInformation = null
 				for (var kindex = 0; kindex < fcim.symbols.length; kindex++) {
 					var element = fcim.symbols[kindex];
@@ -153,10 +153,11 @@ export class LuaSignatureHelpProvider implements SignatureHelpProvider {
 			} 
 			var key: string = keys[keys.length - 1]
 			if (key == "self") {
-				var moduleName = getSelfToModuleName(tokens, lp)
-				if (moduleName == null) {
+				var data = getSelfToModuleName(tokens, lp)
+				if (data == null) {
 					return
 				} else {
+					var moduleName = data.moduleName
 					keys[keys.length - 1] = moduleName
 					key = moduleName;
 				}

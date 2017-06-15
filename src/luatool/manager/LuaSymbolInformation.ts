@@ -1,6 +1,6 @@
 import vscode = require('vscode');
 import {LuaFiledCompletionInfo} from "../provider/LuaFiledCompletionInfo"
-import {CLog,getParamComment,getSelfToModuleName,getTokens,getFirstComments} from '../Utils'
+import {CLog,getParamComment,getTokens,getFirstComments} from '../Utils'
 import {  LuaInfo, TokenInfo, TokenTypes, LuaComment, LuaRange, LuaErrorEnum, LuaError, LuaInfoType} from '../TokenInfo';
 export class LuaSymbolInformation extends vscode.SymbolInformation
 {

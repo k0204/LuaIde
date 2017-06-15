@@ -16,7 +16,7 @@ export class LuaFunctionParse {
     public check(luaInfo: LuaInfo, isSemicolons: boolean, checkBreak: Function): boolean {
         var t: TokenInfo = this.lp.getCurrentToken(null)
         luaInfo.type = LuaInfoType.Function
-        this.lp.currentfunctionCount++;
+        
 
         var funName = t.value;
         var nindex: number = t.index;
@@ -43,11 +43,12 @@ export class LuaFunctionParse {
             
             funName = "TempFun_"+luaInfo.startToken.line +"_"+ luaInfo.startToken.lineStart
         }
-        this.lp.currentFunctionNames.push(funName);
+        
+       
 
         //console.log("开始解析funcation")
         if (this.setFunctionParam(luaInfo) == false) return false
-
+         this.lp.luaInfoManager.currentFcim.setBeginFunName(funName,luaInfo.params);
         this.lp.tokenIndex++;
         //进行方法内的解析
         var isEnd = this.lp.setLuaInfo(luaInfo, function (luaParse: LuaParse) {
@@ -71,9 +72,9 @@ export class LuaFunctionParse {
             return false
         }, checkBreak)
         if (isEnd) {
-            this.lp.functionEnd();
-            this.lp.currentfunctionCount--;
-            this.lp.currentFunctionNames.pop();
+           
+          
+            this.lp.luaInfoManager.currentFcim.setEndFun();
             return true
         }
         else {
