@@ -468,11 +468,23 @@ export class LuaCompletionItemControler {
         key: string,
         cItems: Array< LuaFiledCompletionInfo>) {
         key = key.toLowerCase();
-        item.lowerCaseItems.forEach((v) => {
+        // if(item.parentModulePath!= null){
+        //     item.items.forEach((v) => {
+        //     if (cItems.indexOf(v) == -1) {
+        //             cItems.push( v)
+        //         }
+        //     })
+        // }else{
+            item.items.forEach((v) => {
+                // if(v.label == "NetWork"){
+                //     var xx = 1;
+                // }
             if (cItems.indexOf(v) == -1) {
                     cItems.push( v)
-            }
-        })
+                }
+            })
+        // }
+        
     }
 
  

@@ -301,7 +301,7 @@ function checkCurrentDocument(document: vscode.TextDocument, luaManager: LuaInfo
             var xx = 1;
 
         }
-       // console.log(info[0])
+        console.log(info[0])
         funRootItem = DefinitionFindItem(info[1].luaGolbalCompletionInfo, keyNames, 0);
         if (funRootItem != null && funRootItem.isNewVar == true) {
             return new vscode.Location(funRootItem.uri, funRootItem.position)

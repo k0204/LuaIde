@@ -11,7 +11,7 @@ export class LuaFiledCompletionInfo extends CompletionItem {
 
     public isLocal: boolean;
    
-    private items: Map<string, LuaFiledCompletionInfo>;
+    public items: Map<string, LuaFiledCompletionInfo>;
     public lowerCaseItems: Map<string, LuaFiledCompletionInfo>;
     public symbol:LuaSymbolInformation;
     public type: Array<number>;

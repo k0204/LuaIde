@@ -17,6 +17,8 @@ export class FileCompletionItemManager {
     public currentFunctionParams: Array<Array<string>> = null;
     public currentSymbolFunctionNames: Array<string> = null;
     public uri: Uri;
+   
+    public ModuleName:string = null;
     //方法集合 用于 方法查找
     public symbols: Array<LuaSymbolInformation> = null;
     //临时值 解析完毕 会设置为null
@@ -207,7 +209,7 @@ export class FileCompletionItemManager {
                    var endIndex = className.indexOf("]")
                    className = className.substring(1,endIndex)
                    className = className.trim();
-                   // console.log(className)
+                    // console.log(className)
                     completion.funAnnotationReturnValue = className
                }
                
@@ -363,6 +365,7 @@ export class FileCompletionItemManager {
     ): LuaFiledCompletionInfo {
         this.lp = lp;
         this.tokens = lp.tokens;
+
         // console.log("line:"+luaInfo.startToken.line)
         // console.log("line:"+luaInfo.startToken.value)
         var starIndex: number = luaInfo.startToken.index;
@@ -388,7 +391,7 @@ export class FileCompletionItemManager {
         }
 
         var stoken = this.tokens[starIndex]
-        
+       
         if (
             stoken.type == TokenTypes.NumericLiteral ||
             stoken.type == TokenTypes.BooleanLiteral ||
@@ -400,11 +403,39 @@ export class FileCompletionItemManager {
             return
 
         }
+         if(stoken.value == "module"){
+            
+            if(this.tokens.length >=starIndex +3){
+                
+                if(this.tokens[starIndex+1].value == "("){
+                    var moduleToken = this.tokens[starIndex+2]
+                    if(moduleToken.type == TokenTypes.StringLiteral){
+
+                        this.ModuleName = moduleToken.value;
+                       var moduleCompletion = new LuaFiledCompletionInfo(this.ModuleName,CompletionItemKind.Field, lp.tempUri, new vscode.Position(moduleToken.line, moduleToken.lineStart), false);
+                       
+                        this.luaGolbalCompletionInfo.addItem(moduleCompletion)
+                        moduleCompletion.isNewVar = true
+
+                        var moduleFunCompletion = new LuaFiledCompletionInfo(this.ModuleName,CompletionItemKind.Field, lp.tempUri, new vscode.Position(moduleToken.line, moduleToken.lineStart), false);
+                        this.luaFunCompletionInfo.addItem(moduleFunCompletion)
+                      moduleCompletion.isNewVar = true
+                      moduleFunCompletion.isNewVar = true
+                        this.rootCompletionInfo = moduleCompletion;
+                        this.rootFunCompletionInfo = moduleFunCompletion;
+                        return;
+                    }
+                }
+
+            }
+        }
+
+
         var startInfos: LuaFiledCompletionInfo = null
 
         var infos: Array<CompletionItemSimpleInfo> = this.getCompletionKey(starIndex, endIndex);
 
-       
+        
         if (infos == null || infos.length == 0) { return null }
         var isCheckParentPath = false
         var forindex: number = 0;
@@ -412,6 +443,8 @@ export class FileCompletionItemManager {
             startInfos = this.luaFunCompletionInfo;
             if(this.currentFunFiledCompletion != null){
                 startInfos = this.currentFunFiledCompletion;
+            }else if(this.ModuleName != null){
+                startInfos = startInfos.getItemByKey(this.ModuleName)
             }
         } else if (this.currentFunctionNames.length == 0) {
             if (luaInfo.isLocal) {
@@ -612,6 +645,7 @@ export class FileCompletionItemManager {
                         var completion: LuaFiledCompletionInfo = new LuaFiledCompletionInfo(
                             filed.name, CompletionItemKind.Field, lp.tempUri,
                             new vscode.Position(filed.endToken.line, filed.endToken.lineStart), isFun);
+                            completion.isNewVar = true;
                         startInfos.addItem(completion)
                         completion.setType(1)
                         this.addTableFileds(filed, completion, lp, isFun)
