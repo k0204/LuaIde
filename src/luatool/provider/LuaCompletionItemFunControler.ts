@@ -43,12 +43,12 @@ export class LuaCompletionItemFunControler {
                 if (keys.length > 0) {
 
 
-                    if (funNames.length == 0 && funNames[0] == "__g__") {
-                        //全局方法
+                    // if (funNames.length == 0 && funNames[0] == "__g__") {
+                    //     //全局方法
 
-                    } else {
+                    // } else {
                         this.luaCompletionItemControler.getLuaCompletionsByKeysAndFunNames(item.uri, keys.reverse(), funNames, citems, false)
-                    }
+                    // }
 
 
                     if (valueFunName == "new") {

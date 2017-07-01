@@ -1,6 +1,7 @@
 import vscode = require('vscode');
 import { LuaFiledCompletionInfo } from "../provider/LuaFiledCompletionInfo"
 import { ExtensionManager } from "../ex/ExtensionManager"
+var ospath = require("path")
 /**
  * 存储项目中的路径
  */
@@ -13,9 +14,12 @@ export class LuaFileCompletionItems {
         }
         return LuaFileCompletionItems._ins;
     }
+    public fileExtnames:Array<string>;
     public completions: Array<LuaFiledCompletionInfo>;
     public modulePaths:Map<string,Array<string>>;
     public constructor() {
+        this.fileExtnames = new Array<string>();
+        this.fileExtnames.push(".lua")
         this.completions = new Array<LuaFiledCompletionInfo>()
         this.modulePaths = new Map<string,Array<string>>()
     }
@@ -54,10 +58,18 @@ export class LuaFileCompletionItems {
         }
         var position: vscode.Position = new vscode.Position(1, 1)
         var str:string = path.fsPath
-        var luaIndex = str.lastIndexOf(".lua")
-        if(luaIndex>-1){
-            str = str.substring(0,luaIndex)
+
+        for (var index = 0; index < this.fileExtnames.length; index++) {
+           
+            var extname = this.fileExtnames[index];
+             var extname1 = ospath.extname(str)
+             if(extname == extname1){
+                str = str.substring(0,str.length-extname1.length)
+                break;
+             }
+            
         }
+
          str = str.replace(/\\/g, "/");
         str =  str.replace(new RegExp("/", "gm"), ".")
        var  str_1 = str.toLowerCase()

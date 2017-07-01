@@ -16,20 +16,20 @@ import { BreakPointData } from "./BreakPointData"
 import { EventEmitter } from 'events';
 import * as net from 'net';
 import * as childProcess from 'child_process';
-import { SocketClientState, Mode } from './Common';
+import { SocketClientState, Mode } from './DebugCommon';
 import { LuaProcess, LuaDebuggerEvent } from './LuaProcess';
 import { ScopesManager, LuaDebugVarInfo } from './ScopesManager';
 import { BaseChildProcess } from "./childProcess/BaseChildProcess"
 import child_process = require('child_process');
 // import {  LuaInfo, TokenInfo, TokenTypes, LuaComment, LuaRange, LuaErrorEnum, LuaError, LuaInfoType} from '../luatool/TokenInfo';
 // import {LuaParseTool} from '../luatool/LuaParseTool'
-import { initConfig, getLoadLuaScript } from "../Common"
+import { initConfig } from "../Common"
 export class LuaDebug extends DebugSession {
 	private luaProcess: LuaProcess;
 	private breakPointData_: BreakPointData;
 	private _breakpointId = 1000;
 	private luaStartProc: child_process.ChildProcess;
-	
+	public fileExtname:string;
 	public runtimeType: string;
 	public localRoot: string;
 	public isHitBreak: boolean = false
@@ -43,6 +43,7 @@ export class LuaDebug extends DebugSession {
 	// private luaParseTool: LuaParseTool;
 	public constructor() {
 		super();
+		this.fileExtname = ".lua"
 		this.setDebuggerLinesStartAt1(true);
 		this.setDebuggerColumnsStartAt1(false);
 	}
@@ -110,6 +111,7 @@ export class LuaDebug extends DebugSession {
 		});
 		var luadebug: LuaDebug = this;
 		//关闭事件
+		var self = this
 		this.luaStartProc.on('close', function (code) {
 			luadebug.sendEvent(new OutputEvent("close" + "\n"))
 			if (baseChildProcess.childPid) {
@@ -120,10 +122,16 @@ export class LuaDebug extends DebugSession {
 					console.log('error..');
 				}
 			}
-			// luadebug.sendEvent(new TerminatedEvent());
+			if(self.runtimeType == "LuaTest"){
+				luadebug.sendEvent(new TerminatedEvent());
+			}
+			
 		});
 	}
 	protected attachRequest(response: DebugProtocol.AttachResponse, args: any): void {
+		if(args.fileExtname != null){
+			this.fileExtname = args.fileExtname
+		}
 		this.luaProcess = new LuaProcess(this, Mode.attach, args);
 		this.scopesManager_ = new ScopesManager(this.luaProcess, this)
 		this.localRoot = args.localRoot
@@ -180,8 +188,8 @@ export class LuaDebug extends DebugSession {
 			if (path == "=[C]") {
 				path = ""
 			} else {
-				if (path.indexOf(".lua") == -1) {
-					path = path + ".lua";
+				if (path.indexOf(this.fileExtname) == -1) {
+					path = path + this.fileExtname;
 				}
 				path = this.convertToServerPath(path)
 			}
@@ -323,10 +331,10 @@ export class LuaDebug extends DebugSession {
 			return
 		}
 		if (args.context == "repl" && args.expression == ">load") {
-			this.luaProcess.runLuaScript({ luastr: getLoadLuaScript(), frameId: args.frameId }, function (body) {
-				response.body = body
-				luadebug.sendResponse(response);
-			})
+			// this.luaProcess.runLuaScript({ luastr: getLoadLuaScript(), frameId: args.frameId }, function (body) {
+			// 	response.body = body
+			// 	luadebug.sendResponse(response);
+			// })
 			return
 		}
 		var index: number = 1
@@ -359,6 +367,10 @@ export class LuaDebug extends DebugSession {
 		path = path.replace(new RegExp("/./", "gm"), "/")
 		var nindex: number = path.lastIndexOf("/");
 		var fileName: string = path.substring(nindex + 1)
+
+		fileName = fileName.substr(0,fileName.length - 4) + this.fileExtname;
+		path = path.substr(0,path.length - 4)  + this.fileExtname;
+
 		var paths: Array<string> = this.pathMaps.get(fileName)
 		if (paths == null) {
 			return path
@@ -414,6 +426,10 @@ export class LuaDebug extends DebugSession {
 		path = path.replace(/\\/g, "/");
 		var nindex: number = path.lastIndexOf("/");
 		var fileName: string = path.substring(nindex + 1)
+		var extname = ospath.extname(path)
+		var baseName = ospath.basename(path)
+		fileName = fileName.substr(0,fileName.length - extname.length) + ".lua";
+		path = path.substr(0,path.length - extname.length) + ".lua";
 		var pathinfo = {
 			fileName: fileName,
 			serverPath: path,
@@ -493,7 +509,7 @@ export class LuaDebug extends DebugSession {
 				//递归读取文件
 				this.readFileList(filePath)
 			} else {
-				if (filePath.indexOf(".lua") > -1) {
+				if (filePath.indexOf(this.fileExtname) > -1) {
 
 
 					var nindex: number = filePath.lastIndexOf("/");

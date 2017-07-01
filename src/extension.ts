@@ -22,13 +22,15 @@ import { ExtensionManager } from "./luatool/ex/ExtensionManager"
 
 import { AutoLuaComment } from "./luatool/ex/AutoLuaComment";
 import { ConstInfo } from "./ConstInfo";
+import { UserLoginCount } from "./luatool/UserLoginCount";
 
 
 
 let diagnosticCollection: vscode.DiagnosticCollection;
 let currentDiagnostic: vscode.Diagnostic;
 export function activate(context: vscode.ExtensionContext) {
-
+	
+	
 	var luaCodeExtension = vscode.extensions.getExtension(ConstInfo.extensionLuaCodeConfig)
 	
 	var luaIdeExtension = vscode.extensions.getExtension(ConstInfo.extensionLuaIdeConfig)
@@ -96,7 +98,39 @@ export function activate(context: vscode.ExtensionContext) {
 			parseLuaFile()
 		})
 	}
+	var count = 0
+    var maxCount = 1
+    function parseLuaFileCount(){
+        count++;
+        if(maxCount == count){
+             parseLuaFile(); 
+        }
+    }
+    var config = vscode.workspace.getConfiguration("files")
+    for (var key in  config.associations) {
+        console.log(key)
+        console.log(config.associations[key])
+        if(config.associations[key] == "lua"){
+            maxCount++;
+			var keys = key.split(".")
+			if(keys.length >= 1){
+				LuaFileCompletionItems.getLuaFileCompletionItems().fileExtnames.push("."+keys[keys.length-1])
+			}
+			
+            vscode.workspace.findFiles("**/"+key, "", 10000).then(
+            value => {
+                if (value == null) return
 
+                let count = value.length;
+                value.forEach(element => {
+                    uris.push(element);
+                });
+                parseLuaFileCount()
+                //  console.log(uris.length)
+               // parseLuaFile();
+            })
+        }
+    }
 	vscode.workspace.findFiles("**/*.lua", "", 10000).then(
 		value => {
 			if (value == null) return
@@ -106,7 +140,7 @@ export function activate(context: vscode.ExtensionContext) {
 				uris.push(element);
 			});
 			//  console.log(uris.length)
-			parseLuaFile();
+			parseLuaFileCount();
 		})
 
 	vscode.workspace.onDidSaveTextDocument(event => {

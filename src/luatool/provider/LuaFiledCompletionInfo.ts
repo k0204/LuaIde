@@ -10,7 +10,7 @@ export class LuaFiledCompletionInfo extends CompletionItem {
 
 
     public isLocal: boolean;
-    public isShow: boolean;
+   
     private items: Map<string, LuaFiledCompletionInfo>;
     public lowerCaseItems: Map<string, LuaFiledCompletionInfo>;
     public symbol:LuaSymbolInformation;
@@ -21,6 +21,7 @@ export class LuaFiledCompletionInfo extends CompletionItem {
     public uri: vscode.Uri;
     public position: vscode.Position;
     public isFun: boolean;
+    public isNewVar:boolean=false;
     public isLocalFunction:boolean = null;
     //方法根 如果当前方法还有上层方法 那么记录下 便于查找
     public funParentLuaCompletionInfo;
@@ -67,7 +68,7 @@ export class LuaFiledCompletionInfo extends CompletionItem {
 
         super(label, kind);
         this.isFun = isFun
-        this.isShow = true;
+        
         this.documentation = ""
         this.type = new Array<number>();
         this.uri = uri;

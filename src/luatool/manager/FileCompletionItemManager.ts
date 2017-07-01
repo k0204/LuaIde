@@ -26,6 +26,7 @@ export class FileCompletionItemManager {
     //记录当前文档的所有方法
     public luaFunCompletionInfo: LuaFiledCompletionInfo = null;
     //全局变量提示 这里在0.2.2 中继续了细化 将文件的全局 和整体全局 区分开来   luaGolbalCompletionInfo 为总体全局
+    //luaFileGolbalCompletionInfo 当前文件的全局变量   两者配合使用
     public luaGolbalCompletionInfo: LuaFiledCompletionInfo = null;
     //文件分为的全局变量 存储
     public luaFileGolbalCompletionInfo: LuaFiledCompletionInfo = null;
@@ -206,7 +207,7 @@ export class FileCompletionItemManager {
                    var endIndex = className.indexOf("]")
                    className = className.substring(1,endIndex)
                    className = className.trim();
-                    console.log(className)
+                   // console.log(className)
                     completion.funAnnotationReturnValue = className
                }
                
@@ -367,6 +368,7 @@ export class FileCompletionItemManager {
         var starIndex: number = luaInfo.startToken.index;
         var endIndex: number = token.index;
         var label: string = "";
+        // console.log(starIndex,endIndex)
         if (starIndex == endIndex) {
             var singleToken: TokenInfo = this.tokens[starIndex];
             if (singleToken.type == TokenTypes.NumericLiteral ||
@@ -518,7 +520,7 @@ export class FileCompletionItemManager {
 
         // }
 
-
+        // console.log(infos,"infos")
         for (var i = forindex; i < infos.length; i++) {
           
             var newStartInfos: LuaFiledCompletionInfo = null
@@ -529,7 +531,7 @@ export class FileCompletionItemManager {
                 completion = new LuaFiledCompletionInfo(infos[i].key, infos[i].kind, lp.tempUri, infos[i].position, isFun)
                 
                 startInfos.addItem(completion)
-                completion.isShow = infos[i].isShow;
+                
                 // completion.textEdit.newText = infos[i].insterStr;
                 if (isFun) {
                     completion.documentation = getFirstComments(infos[i].comments)
@@ -545,27 +547,35 @@ export class FileCompletionItemManager {
                 if (infos[i].desc && completion.isFun == false) {
                     completion.documentation = infos[i].desc
                 }
+               
             }
+            if(i == infos.length-1){
+                if(completion.isNewVar == false && endIndex+2 < tokens.length ){
+                    if(lp.consume("=",tokens[endIndex+1],TokenTypes.Punctuator))
+                   {
+                        completion.isNewVar = true;
+                        completion.position = infos[i].position
+                    }  
+                }
+            } 
             completion.setType(infos[i].tipTipType)
             if (infos[i].nextInfo) {
                 var nextInfo: CompletionItemSimpleInfo = infos[i].nextInfo
-
                 var nextCompletion: LuaFiledCompletionInfo = completion.getItemByKey(nextInfo.key)
                 if (nextCompletion == null) {
                     nextCompletion = new LuaFiledCompletionInfo(nextInfo.key, nextInfo.kind, lp.tempUri, nextInfo.position, isFun);
                     nextCompletion.setType(1)
-                    nextCompletion.isShow = nextInfo.isShow;
+                    
                    
                     completion.addItem(nextCompletion);
                    
+                }else{
+                    var xx= 1;
+
                 }
                  newStartInfos = nextCompletion
             } else {
                 newStartInfos = completion
-            }
-
-            if (newStartInfos == null) {
-                var s = 1
             }
             startInfos = newStartInfos
 
@@ -576,16 +586,12 @@ export class FileCompletionItemManager {
             startInfos.kind = CompletionItemKind.Function;
             startInfos.isLocalFunction =luaInfo.isLocal;
             var funKey = startInfos.label;
-            
             if(this.currentFunFiledCompletion != null){
                 funKey  = this.currentFunFiledCompletion.label + "->" + funKey;
             }
             if(this.luaFunFiledCompletions.has(funKey)){
                 this.luaFunFiledCompletions.get(funKey).isLocalFunction = startInfos.isLocalFunction;
             }
-            var args = startInfos;
-            
-
             
         }
 
@@ -683,7 +689,8 @@ export class FileCompletionItemManager {
                 break
 
             } else {
-                simpleInfo = new CompletionItemSimpleInfo(key, starIndex, CompletionItemKind.Field, tipType, new vscode.Position(keyToken.line, keyToken.lineStart));
+                simpleInfo = new CompletionItemSimpleInfo(key, starIndex, CompletionItemKind.Field, tipType, new vscode.Position(keyToken.line, 
+                keyToken.range.start - keyToken.lineStart));
 
                 infos.push(simpleInfo);
                 starIndex++;
@@ -715,28 +722,18 @@ export class FileCompletionItemManager {
                                 var tokenValue: string = "";
                                 if (stringToken.type == TokenTypes.StringLiteral) {
                                     tokenValue = '"' + stringToken.value + '"';
-                                    var nextSimpleInfo: CompletionItemSimpleInfo = new CompletionItemSimpleInfo(stringToken.value, starIndex, CompletionItemKind.Field, 1, new vscode.Position(stringToken.line, stringToken.lineStart))
+                                    var nextSimpleInfo: CompletionItemSimpleInfo = new CompletionItemSimpleInfo(stringToken.value, starIndex, CompletionItemKind.Field, 1, new vscode.Position(stringToken.line, 
+                                    stringToken.range.start - stringToken.lineStart
+                                    ))
                                     lastInfo.nextInfo = nextSimpleInfo;
-                                    // var aliasInfo: CompletionItemSimpleInfo = new CompletionItemSimpleInfo(
-                                    //     lastInfo.key + '["' + stringToken.value + '"]'
-                                    //     , starIndex, CompletionItemKind.Field, 1, new vscode.Position(stringToken.line, stringToken.lineStart))
-                                    // lastInfo.aliasInfos.push(aliasInfo)
-                                    // aliasInfo = new CompletionItemSimpleInfo(
-                                    //     lastInfo.key + '[]'
-                                    //     , starIndex, CompletionItemKind.Field, 1, lastInfo.position)
-
-                                    // lastInfo.aliasInfos.push(aliasInfo)
+                                    
                                 } else if (
                                     stringToken.type == TokenTypes.NumericLiteral ||
                                     stringToken.type == TokenTypes.BooleanLiteral ||
                                     stringToken.type == TokenTypes.Identifier ||
                                     stringToken.type == TokenTypes.VarargLiteral
                                 ) {
-                                    // var aliasInfo: CompletionItemSimpleInfo = new CompletionItemSimpleInfo(
-                                    //     lastInfo.key + '[' + stringToken.value + ']'
-                                    //     , starIndex, CompletionItemKind.Field, 1, lastInfo.position)
-                                    // lastInfo.aliasInfos.push(aliasInfo)
-                                    // lastInfo.key = lastInfo.key + "[]"
+                                    
                                 }
 
                                 else {

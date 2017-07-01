@@ -186,7 +186,7 @@ export class LuaParse {
       var fcim: FileCompletionItemManager = this.luaInfoManager.currentFcim
       fcim.currentFunctionNames = null
      
-      if (this.isSaveCompletion) {
+      if (this.isSaveCompletion || (this.isSaveCompletion == false && this.isError == false)) {
        var oldFcim= this.luaInfoManager.getFcimByPathStr(this.tempUri.path)
        if(oldFcim != null){
           LuaGolbalCompletionManager.clearGolbalCompletion(oldFcim.luaGolbalCompletionInfo)

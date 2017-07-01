@@ -1,21 +1,44 @@
 import vscode = require('vscode');
 import cp = require('child_process');
-import {LuaParse} from '../LuaParse'
-import {LuaInfoManager} from '../LuaInfoManager'
-import {LuaFiledCompletionInfo} from "../provider/LuaFiledCompletionInfo"
-import {FileCompletionItemManager} from "../manager/FileCompletionItemManager"
+import { LuaParse } from '../LuaParse'
+import { LuaInfoManager } from '../LuaInfoManager'
+import { LuaFiledCompletionInfo } from "../provider/LuaFiledCompletionInfo"
+import { FileCompletionItemManager } from "../manager/FileCompletionItemManager"
 import { LuaFileCompletionItems } from "../manager/LuaFileCompletionItems";
-import {CLog, getTokens, isIdentifierPart, getSelfToModuleName} from "../Utils"
-import {  LuaInfo, TokenInfo, TokenTypes, LuaComment, LuaRange, LuaErrorEnum, LuaError, LuaInfoType} from '../TokenInfo';
 
+import { LuaInfo, TokenInfo, TokenTypes, LuaComment, LuaRange, LuaErrorEnum, LuaError, LuaInfoType } from '../TokenInfo';
+import { LuaCompletionItemControler } from "./LuaCompletionItemControler";
+import { CLog, getSelfToModuleName, getCurrentFunctionName, getTokens, isIdentifierPart } from '../Utils'
 export function byteOffsetAt(document: vscode.TextDocument, position: vscode.Position): vscode.Location {
 
     var lineText = document.lineAt(position.line).text;
-    if(lineText.trim().substring(0,2) == "--"){
+    if (lineText.trim().substring(0, 2) == "--") {
 
-        return checkComment(lineText,position)
+        return checkComment(lineText, position)
     }
-    
+    //检查是不是路径字符串
+    var tempStr = lineText.substring(position.character)
+    var endIndex = tempStr.indexOf('"')
+    if (endIndex > -1) {
+        var startStr = lineText.substring(0, position.character)
+        var findex = startStr.lastIndexOf('"')
+        if (findex > -1) {
+
+            var moduleName = lineText.substring(findex + 1, endIndex + position.character)
+            if (moduleName.length > 0) {
+                var uri = LuaFileCompletionItems.getLuaFileCompletionItems().getUriCompletionByModuleName(moduleName)
+                if (uri) {
+                    var location: vscode.Location =
+                        new vscode.Location(uri, new vscode.Position(0, 0))
+                    return location;
+                }
+
+            }
+
+        }
+
+
+    }
     let offset = document.offsetAt(position);
     let text = document.getText();
     let byteOffset = 0;
@@ -26,15 +49,31 @@ export function byteOffsetAt(document: vscode.TextDocument, position: vscode.Pos
     var tokens: Array<TokenInfo> = getTokens(document, position)
     var isFun: boolean = false
     var i: number = 0;
-    if(tokens)
-    {
-       i = tokens.length - 1;
+    var lashToken: TokenInfo = null
+    if (tokens) {
+        i = tokens.length - 1;
     }
     while (i >= 0) {
 
         CLog();
         var token: TokenInfo = tokens[i];
         i--;
+        if (lp.consume(':', token, TokenTypes.Punctuator) ||
+            lp.consume('.', token, TokenTypes.Punctuator)
+        ) {
+            if (i - 1 >= 0) {
+                if (tokens[i].type == TokenTypes.Identifier &&
+                    lp.consume('function', tokens[i - 1], TokenTypes.Keyword)) {
+                    var posToken = tokens[i - 1]
+                    var line = posToken.line;
+                    return new vscode.Location(document.uri, new vscode.Position(line, 0))
+
+
+                }
+
+
+            }
+        }
         if (lp.consume('function', token, TokenTypes.Keyword)) {
             return null;
         }
@@ -67,12 +106,13 @@ export function byteOffsetAt(document: vscode.TextDocument, position: vscode.Pos
             || lp.consume('else', token, TokenTypes.Punctuator)
             || lp.consume('elseif', token, TokenTypes.Punctuator)
             || lp.consume('do', token, TokenTypes.Keyword)
-            
+
         ) {
             break;
         }
 
         nameChats.push(token.value);
+        lashToken = token;
         if (i >= 0) {
             var nextToken: TokenInfo = tokens[i];
             if (token.type == TokenTypes.Identifier && (
@@ -87,6 +127,9 @@ export function byteOffsetAt(document: vscode.TextDocument, position: vscode.Pos
         }
 
     }
+
+
+
 
     nameChats = nameChats.reverse()
     for (let i = offset; i < text.length; i++) {
@@ -124,6 +167,7 @@ export function byteOffsetAt(document: vscode.TextDocument, position: vscode.Pos
     nameChats.forEach(c => {
         n += c;
     });
+
     // console.log(n)
     //分割
     var keyNames: Array<string> = new Array<string>();
@@ -145,80 +189,179 @@ export function byteOffsetAt(document: vscode.TextDocument, position: vscode.Pos
 
         isSelf = true
     }
-    var findInfos: Array<LuaFiledCompletionInfo> = new Array<LuaFiledCompletionInfo>();
-    getLocation(keyNames, luaManager, 1, findInfos)
-    getLocation(keyNames, luaManager, 2, findInfos)
-    var fInfo: LuaFiledCompletionInfo;
     var location: vscode.Location = null;
-    for (var i = 0; i < keyNames.length; i++) {
-       
-        for(var j = 0; j < findInfos.length;j++)
-        {    
-            var f:LuaFiledCompletionInfo = findInfos[j]
-            if(f.parent && f.parent.uri.path.toLocaleLowerCase().indexOf(keyNames[i].toLocaleLowerCase()) > -1)
-            {
-                fInfo = f;
-                break
-            }
-            else if (f.uri.path.toLocaleLowerCase().indexOf(keyNames[i].toLocaleLowerCase()) > -1) {
-                fInfo = f;
-                break
-            }
-        }
-        if (fInfo != null) {
-            location = new vscode.Location(fInfo.uri, fInfo.position)
-            return location
-        }
+    location = checkCurrentDocument(document, luaManager, keyNames, tokens);
+    if (location) {
+        return location;
     }
-   
-    if(findInfos.length> 0)
-    {
-        location = new vscode.Location(findInfos[0].uri, findInfos[0].position)
-        return location
-    }
+
+    // var findInfos: Array<LuaFiledCompletionInfo> = new Array<LuaFiledCompletionInfo>();
+    // getLocation(keyNames, luaManager, 1, findInfos)
+    // getLocation(keyNames, luaManager, 2, findInfos)
+    // var fInfo: LuaFiledCompletionInfo;
+
     // for (var i = 0; i < keyNames.length; i++) {
-    //     findInfos.forEach(f => {
-    //         if (f.label.toLocaleLowerCase() == keyNames[i].toLocaleLowerCase()) {
+
+    //     for (var j = 0; j < findInfos.length; j++) {
+    //         var f: LuaFiledCompletionInfo = findInfos[j]
+    //         if (f.parent && f.parent.uri.path.toLocaleLowerCase().indexOf(keyNames[i].toLocaleLowerCase()) > -1) {
     //             fInfo = f;
-    //             return
+    //             break
     //         }
-    //     });
+    //         else if (f.uri.path.toLocaleLowerCase().indexOf(keyNames[i].toLocaleLowerCase()) > -1) {
+    //             fInfo = f;
+    //             break
+    //         }
+    //     }
     //     if (fInfo != null) {
     //         location = new vscode.Location(fInfo.uri, fInfo.position)
     //         return location
     //     }
     // }
 
-    if (isSelf == true && location == null) {
-        var rootInfo: FileCompletionItemManager = luaManager.fileCompletionItemManagers.get(document.uri.path)
-        if (rootInfo) {
-            var selfCInfo: LuaFiledCompletionInfo ;//= rootInfo.luaFiledCompletionInfo;
+    // if (findInfos.length > 0) {
+    //     location = new vscode.Location(findInfos[0].uri, findInfos[0].position)
+    //     return location
+    // }
 
-            keyNames[0] = 'self'
-           
-            for (var i = 0; i < keyNames.length; i++) {
-                selfCInfo = selfCInfo.getItemByKey(keyNames[i])
-            }
-            if (selfCInfo) {
-                var location: vscode.Location =
-                    new vscode.Location(selfCInfo.uri, selfCInfo.position)
-                return location;
-            }
-        }
-    }
+
+    // if (isSelf == true && location == null) {
+    //     var rootInfo: FileCompletionItemManager = luaManager.fileCompletionItemManagers.get(document.uri.path)
+    //     if (rootInfo) {
+    //         var selfCInfo: LuaFiledCompletionInfo;//= rootInfo.luaFiledCompletionInfo;
+
+    //         keyNames[0] = 'self'
+
+    //         for (var i = 0; i < keyNames.length; i++) {
+    //             selfCInfo = selfCInfo.getItemByKey(keyNames[i])
+    //         }
+    //         if (selfCInfo) {
+    //             var location: vscode.Location =
+    //                 new vscode.Location(selfCInfo.uri, selfCInfo.position)
+    //             return location;
+    //         }
+    //     }
+    // }
+    // return location;
     return location;
 }
+function checkCurrentDocument(document: vscode.TextDocument, luaManager: LuaInfoManager, keyNames: Array<string>, tokens: Array<TokenInfo>) {
+    var citems: Array<LuaFiledCompletionInfo> = new Array<LuaFiledCompletionInfo>();
 
-function checkComment(line:string,position: vscode.Position){
+    var fcim = luaManager.getFcim(document.uri)
+    var functionNames: Array<string> = getCurrentFunctionName(tokens)
+    var funRootItem = null;
+    if (functionNames != null && functionNames.length > 0) {
+
+        var args = fcim.getSymbolArgsByNames(functionNames)
+        if (keyNames.length == 1) {
+            //参数查找
+            for (var index = 0; index < args.length; index++) {
+                var arg = args[index];
+                if (arg.label == keyNames[0]) {
+                    var location: vscode.Location =
+                        new vscode.Location(document.uri, arg.position)
+                    return location
+                }
+            }
+        }
+        //方法内的变量
+
+        for (var index = 0; index < functionNames.length; index++) {
+            var fname = functionNames[index];
+
+            funRootItem = fcim.luaFunFiledCompletions.get(fname)
+            funRootItem = DefinitionFindItem(funRootItem, keyNames, 0)
+            if (funRootItem != null) {
+                return new vscode.Location(funRootItem.uri, funRootItem.position)
+            }
+        }
+        //方法查找
+    }
+    funRootItem = DefinitionFindItem(fcim.luaFunCompletionInfo, keyNames, 0);
+    if (funRootItem != null && funRootItem.isNewVar == true) {
+        return new vscode.Location(funRootItem.uri, funRootItem.position)
+    }
+    //文件全局查找
+    funRootItem = DefinitionFindItem(fcim.luaFileGolbalCompletionInfo, keyNames, 0);
+    if (funRootItem != null && funRootItem.isNewVar == true) {
+        return new vscode.Location(funRootItem.uri, funRootItem.position)
+    }
+    //项目全局
+    funRootItem = DefinitionFindItem(fcim.luaGolbalCompletionInfo, keyNames, 0);
+    if (funRootItem != null && funRootItem.isNewVar == true) {
+        return new vscode.Location(funRootItem.uri, funRootItem.position)
+    }
+
+    //先 根据变量名字 找找对应的文件名 如果有 那么 直接确定为该文件
+    var fileCompletionItemManagers: Map<string, FileCompletionItemManager> = luaManager.fileCompletionItemManagers
+    for (var info of fileCompletionItemManagers) {
+
+        if (info[0].indexOf("modulePath") > -1) {
+            var xx = 1;
+
+        }
+       // console.log(info[0])
+        funRootItem = DefinitionFindItem(info[1].luaGolbalCompletionInfo, keyNames, 0);
+        if (funRootItem != null && funRootItem.isNewVar == true) {
+            return new vscode.Location(funRootItem.uri, funRootItem.position)
+        }
+        funRootItem = DefinitionFindItem(info[1].luaFunCompletionInfo, keyNames, 0);
+        if (funRootItem != null) {
+            return new vscode.Location(funRootItem.uri, funRootItem.position)
+        }
+        if (info[1].rootCompletionInfo != null && keyNames[0] == info[1].rootCompletionInfo.label) {
+            funRootItem = DefinitionFindItem(info[1].rootCompletionInfo, keyNames, 2);
+            if (funRootItem != null && funRootItem.isNewVar == true) {
+                return new vscode.Location(funRootItem.uri, funRootItem.position)
+            }
+        }
+
+    }
+
+
+
+
+
+}
+function FindItemByFileName(keyNames: Array<string>) {
+    //还没找到 那么就根据名字找依照
+    for (var index = 0; index < keyNames.length; index++) {
+        var element = keyNames[index];
+
+    }
+
+}
+function DefinitionFindItem(rootItem: LuaFiledCompletionInfo, keys: Array<string>, index: number) {
+    if (rootItem == null) return null
+    rootItem = rootItem.getItemByKey(keys[index])
+    if (index == keys.length - 1) {
+        return rootItem
+    } else {
+        if (rootItem != null) {
+            index++;
+            rootItem = DefinitionFindItem(rootItem, keys, index)
+            return rootItem
+        } else {
+            return null
+        }
+    }
+}
+
+
+
+
+
+function checkComment(line: string, position: vscode.Position) {
     var index1 = line.indexOf('[')
     var index2 = line.indexOf(']');
-    var moduleName = line.substring(index1+1,index2)
-    if(position.character> index1 && position.character < index2){
-      var  uri =   LuaFileCompletionItems.getLuaFileCompletionItems().getUriCompletionByModuleName(moduleName)
-     
-       var location: vscode.Location =
-                    new vscode.Location(uri, new vscode.Position(0,0))
-                return location;
+    var moduleName = line.substring(index1 + 1, index2)
+    if (position.character > index1 && position.character < index2) {
+        var uri = LuaFileCompletionItems.getLuaFileCompletionItems().getUriCompletionByModuleName(moduleName)
+
+        var location: vscode.Location =
+            new vscode.Location(uri, new vscode.Position(0, 0))
+        return location;
     }
 
 }
@@ -265,25 +408,24 @@ function getLocation(keyNames: Array<string>, luaManager: LuaInfoManager, type: 
     //先找fun
     var cinfo: LuaFiledCompletionInfo = null;
     var location: vscode.Location = null
-    
+
     luaManager.fileCompletionItemManagers.forEach((v, k) => {
-       if(k != LuaParse.checkTempFilePath){
-        var tempInfo: LuaFiledCompletionInfo = null;
-        if (type == 1) {
-            tempInfo = v.luaFunCompletionInfo;//.getItemByKey(key,true)
-        }
-        else if (type == 2) {
-            tempInfo = v.luaGolbalCompletionInfo;//.getItemByKey(key)
-        }
-        var findInfo: LuaFiledCompletionInfo = getCompletionByKeyNams(tempInfo, keyNames, type)
-        if (findInfo) {
-            findInfos.push(findInfo)
-            // location = new vscode.Location(findInfo.uri, findInfo.position)
-            // return
-        }
+        if (k != LuaParse.checkTempFilePath) {
+            var tempInfo: LuaFiledCompletionInfo = null;
+            if (type == 1) {
+                tempInfo = v.luaFunCompletionInfo;//.getItemByKey(key,true)
+            }
+            else if (type == 2) {
+                tempInfo = v.luaGolbalCompletionInfo;//.getItemByKey(key)
+            }
+            var findInfo: LuaFiledCompletionInfo = getCompletionByKeyNams(tempInfo, keyNames, type)
+            if (findInfo) {
+                findInfos.push(findInfo)
+
+            }
         }
     })
-    
+
 }
 
 

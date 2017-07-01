@@ -133,7 +133,7 @@ export class LuaLeftCheck {
                 this.lp.setError(this.lp.getCurrentToken(null), "没有赋值")
             
             }
-             leftLuaInfo.setEndToken(this.lp.getCurrentToken(null))
+             leftLuaInfo.setEndToken(this.lp.getUpToken())
             // this.lp.tokenIndex++;
             return
        }

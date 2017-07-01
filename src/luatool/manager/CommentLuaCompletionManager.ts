@@ -6,9 +6,9 @@ export class CommentLuaCompletionManager{
         this.items = new Array<CompletionItem>();
         var completions = [
             {
-                name:"returnValue",
-                comment:"返回值注释 例:@returnValue [com.app.Model.TestModel]",
-                insertText:"returnValue "
+                name:"return",
+                comment:"返回值注释 例:@return [com.app.Model.TestModel]",
+                insertText:"return "
             },
             {
                 name:"parentClass",

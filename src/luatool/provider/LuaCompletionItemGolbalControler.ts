@@ -46,9 +46,14 @@ export class LuaCompletionItemGolbalControler {
         var items:Array<LuaFiledCompletionInfo> = new Array<LuaFiledCompletionInfo>();
         this.luaInfoManager.fileCompletionItemManagers.forEach((v,k)=>{
              var item = v.luaGolbalCompletionInfo.getItemByKey(key)
-             if(item){
+             if(item != null && item.isNewVar == true){
                  items.push(item)
+                var funItem =  v.luaFunCompletionInfo.getItemByKey(key,false)
+                if(funItem != null){
+                    items.push(funItem)
+                }
              }
+             
         })
         return items;
     }

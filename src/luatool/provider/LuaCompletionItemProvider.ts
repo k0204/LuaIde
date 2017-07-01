@@ -18,7 +18,7 @@ import { CacheCompletionInfo } from "../manager/CacheCompletionInfo";
 
 export class LuaCompletionItemProvider implements vscode.CompletionItemProvider {
 
-  
+
     public provideCompletionItems(
         document: vscode.TextDocument,
         position: vscode.Position,
@@ -28,13 +28,13 @@ export class LuaCompletionItemProvider implements vscode.CompletionItemProvider 
     }
     private checkFunReturnModule(line: string): Array<LuaFiledCompletionInfo> {
         var line = line.trim()
-        var commenstrs = ["--@valueReference","--@parentClass","--@returnValue"]
+        var commenstrs = ["--@valueReference", "--@parentClass", "--@return"]
         var commenstr = null;
         for (var index = 0; index < commenstrs.length; index++) {
             var cstr = commenstrs[index];
-           var rindex =  line.indexOf(cstr)
-            if(rindex == 0){
-                 return LuaFileCompletionItems.getLuaFileCompletionItems().completions
+            var rindex = line.indexOf(cstr)
+            if (rindex == 0) {
+                return LuaFileCompletionItems.getLuaFileCompletionItems().completions
             }
         }
         return null
@@ -48,7 +48,7 @@ export class LuaCompletionItemProvider implements vscode.CompletionItemProvider 
         if (line == commenstr) {
             let lineText = document.lineAt(position.line).text;
             if (document.lineCount > position.line + 2) {
-                var start: vscode.Position = new vscode.Position(position.line+1, 0)
+                var start: vscode.Position = new vscode.Position(position.line + 1, 0)
                 var end: vscode.Position = new vscode.Position(document.lineCount, 200)
                 var lp: LuaParse = LuaParse.lp;
                 var lpt: LuaParseTool = LuaParse.lp.lpt;
@@ -68,8 +68,8 @@ export class LuaCompletionItemProvider implements vscode.CompletionItemProvider 
                     }
 
                     if (index == 0) {
-                        if(token.value == "local" && token.type == TokenTypes.Keyword){
-                             token = lpt.lex();
+                        if (token.value == "local" && token.type == TokenTypes.Keyword) {
+                            token = lpt.lex();
                         }
                         if (token.value == "function" && token.type == TokenTypes.Keyword) {
                             isFun = true;
@@ -102,39 +102,38 @@ export class LuaCompletionItemProvider implements vscode.CompletionItemProvider 
                         if (token.error != null) {
                             break
                         }
-                        if(token.type == TokenTypes.Punctuator && token.value == ","){
+                        if (token.type == TokenTypes.Punctuator && token.value == ",") {
 
-                        }else{
+                        } else {
                             break;
                         }
-                    }else{
+                    } else {
                         break;
                     }
                 }
             }
-            var items:Array<CompletionItem> = new Array<CompletionItem>();
-            if(args.length>0){
-                args.forEach(arg=>{
-                     var item:CompletionItem = new CompletionItem(arg +" ",CompletionItemKind.Variable)
-                     item.documentation = "参数:"+arg
-                      items.push(item)
-          
+            var items: Array<CompletionItem> = new Array<CompletionItem>();
+            if (args.length > 0) {
+                args.forEach(arg => {
+                    var item: CompletionItem = new CompletionItem(arg + " ", CompletionItemKind.Variable)
+                    item.documentation = "参数:" + arg
+                    items.push(item)
+
                 })
-           
-            
-       
+
+
+
 
             }
-            if(items.length >0){
-                CommentLuaCompletionManager.getIns().items.forEach(v=>{
+            if (items.length > 0) {
+                CommentLuaCompletionManager.getIns().items.forEach(v => {
                     items.push(v)
                 })
                 return items
-            }else
-            {
+            } else {
                 return CommentLuaCompletionManager.getIns().items;
             }
-            
+
 
         }
         return null
@@ -207,33 +206,32 @@ export class LuaCompletionItemProvider implements vscode.CompletionItemProvider 
             var citems: Array<LuaFiledCompletionInfo> = new Array<LuaFiledCompletionInfo>();
             //  var keys = keys.reverse()
             LuaCompletionItemControler.getIns().getLuaCompletionsByKeysAndFunNames(document.uri, keys, functionNames, citems, true)
-
-            var funItems:Array<CompletionItem> = new Array<CompletionItem>();
+           var currentItems =  this.getCurrentFileItems(document.uri, keys)
+            var funItems: Array<CompletionItem> = new Array<CompletionItem>();
             //清理一下 只保存一份 如果有方法优先方法
             var onlyItems: Map<string, CompletionItem> = new Map<string, CompletionItem>();
+            currentItems.forEach(v=>{
+                citems.push(v)
+
+            })
             citems.forEach(v => {
                 if (onlyItems.has(v.label)) {
                     var oldItem = onlyItems.get(v.label)
                     if (v.kind == vscode.CompletionItemKind.Function && oldItem.kind != vscode.CompletionItemKind.Function) {
-                        var newFun =  CacheCompletionInfo.getIns().getItem(v)
+                        var newFun = CacheCompletionInfo.getIns().getItem(v)
                         funItems.push(newFun)
                         onlyItems.set(v.label, newFun)
 
                     }
                 } else {
-                    if (v.kind == vscode.CompletionItemKind.Function){
-                        var newFun =  CacheCompletionInfo.getIns().getItem(v)
+                    if (v.kind == vscode.CompletionItemKind.Function) {
+                        var newFun = CacheCompletionInfo.getIns().getItem(v)
                         funItems.push(newFun)
                         onlyItems.set(v.label, newFun)
-                    }else{
+                    } else {
                         onlyItems.set(v.label, v)
                     }
-                    
-
-
                 }
-
-
             })
             var argsItems: Array<LuaFiledCompletionInfo>;
             if (infos[0].length == 1) {
@@ -249,25 +247,7 @@ export class LuaCompletionItemProvider implements vscode.CompletionItemProvider 
             onlyItems.forEach((v1, k) => {
                 suggestions.push(v1)
             })
-            // var functionitem: Array<LuaFiledCompletionInfo> = LuaParse.lp.luaInfoManager.getFunctionCompletionItems(
-            //     document.uri, infos[0])
-            // if (functionitem == null) return resolve(requireRuggestions)
-            // var argsItems: Array<LuaFiledCompletionInfo>;
-            // if (infos[0].length == 1) {
-            //     argsItems = LuaParse.lp.luaInfoManager.getFunctionArgs(infos[1], document.uri)
-            // }
-            // if (argsItems) {
-            //     argsItems.forEach(element => {
-            //         suggestions.push(element)
-            //     });
-            // }
-            // functionitem.forEach(element => {
-            //     suggestions.push(element)
-            // });
-            // requireRuggestions.forEach(element => {
-            //     suggestions.push(element)
-
-            // })
+           
             CacheCompletionInfo.getIns().pushItems(funItems)
             funItems = null;
             return resolve(suggestions);
@@ -449,7 +429,43 @@ export class LuaCompletionItemProvider implements vscode.CompletionItemProvider 
         }
 
     }
+    public getCurrentFileItems(uri: vscode.Uri, keys: Array<string>): Array<LuaFiledCompletionInfo> {
+        var fcim = LuaParse.lp.luaInfoManager.getFcimByPathStr(uri.path)
+        var items: Array<LuaFiledCompletionInfo> = new Array<LuaFiledCompletionInfo>();
+        var citems: Array<LuaFiledCompletionInfo> = new Array<LuaFiledCompletionInfo>();
+        if(fcim == null){
+            return citems
+        }
+        if (keys.length > 1) {
+            fcim.luaFunFiledCompletions.forEach((v, k) => {
+                this.getCurrentFileItemByRoot(v, keys, 0, items);
+            })
+        }
+        
+        if(items.length > 0){
+            items.forEach(element => {
+                var eitems = element.getItems()
+                eitems.forEach((v,k)=>{
+                    citems.push(v)
+                })
+            });
+        }
+        return citems;
+    }
+    public getCurrentFileItemByRoot(root: LuaFiledCompletionInfo, keys: Array<string>, index: number, items: Array<LuaFiledCompletionInfo>) {
+        root = root.getItemByKey(keys[index])
+        if (root) {
+            if(index == keys.length-2){
+                items.push(root);
+            }
+            index += 2;
+            if (index < keys.length - 1) {
+                this.getCurrentFileItemByRoot(root, keys, index, items);
+            }
+            
+        }
 
+    }
 
 
 

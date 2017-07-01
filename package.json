@@ -1,9 +1,9 @@
 {
-	"name": "luaidetrial",
-	"displayName": "LuaIde Trial",
+	"name": "luaide",
+	"displayName": "Luaide",
 	"description": "luaIde unity cocos quick debugger",
 	"license": "MIT",
-	"version": "0.3.2",
+	"version": "0.3.7",
 	"publisher": "kangping",
 	"author": {
 		"name": "kangping",
@@ -391,6 +391,11 @@
 					"type": "number",
 					"default": 2048,
 					"description": "解析的lua文件最大文件大小,默认为2MB,超过此设置将不解析"
+				},
+				"luaide.showOnLine": {
+					"type": "boolean",
+					"default": true,
+					"description": "是否显示LuaIde 当前使用人数"
 				}
 			}
 		}
@@ -414,6 +419,7 @@
 		"vscode-debugadapter": "^1.17.0",
 		"vscode-debugprotocol": "^1.17.0",
 		"vscode-languageclient": "^3.1.0"
+		
 		
 	}
 }

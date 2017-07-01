@@ -7,6 +7,7 @@ import { getConfigDir } from "../../Common"
 // import { StatisticsMain,StatisticsEvent } from "../../luatool/statistics/StatisticsMain"
 import { UserInfo } from "../ex/UserInfo"
 import { ConstInfo } from "../../ConstInfo";
+import { UserLoginCount } from "../UserLoginCount";
 
 export class LuaIdeConfigManager {
    
@@ -24,6 +25,7 @@ export class LuaIdeConfigManager {
     public requireFunNames:Array<string>;
     // private statisticsMain:StatisticsMain;
     public scriptRoots: Array<string>;
+    public showOnLine:boolean;
    
     public isInit :boolean = false
     constructor() {
@@ -74,7 +76,7 @@ export class LuaIdeConfigManager {
         this.changeTextCheck = luaideConfig.get<boolean>("changeTextCheck")
         this.moduleFunNestingCheck = luaideConfig.get<boolean>("moduleFunNestingCheck")
         this.maxFileSize = luaideConfig.get<number>("maxFileSize")
-        
+        this.showOnLine = luaideConfig.get<boolean>("showOnLine");
         var scriptRoots: Array<string> = luaideConfig.get<Array<string>>("scriptRoots");
         this.scriptRoots = new Array<string>();
         scriptRoots.forEach(rootpath => {
@@ -85,7 +87,20 @@ export class LuaIdeConfigManager {
 
         })
         if(this.scriptRoots.length == 0){
-             vscode.window.showInformationMessage("请在 文件->首选项->设置->工作区设置 添加 luaide.scriptRoots 的配置,否则无法获得最好的提示代码联想效果!");
+             vscode.window.showInformationMessage("请在 文件->首选项->设置->工作区设置 添加 luaide.scriptRoots 的配置,否则无法获得最好的提示代码联想效果!",{
+                title: "配置项文档",
+                isCloseAffordance: true,
+                id: 1
+            }).then(value => {
+                    if (value != null && value.id == 1) {
+                        var previewUri = vscode.Uri.parse("http://www.jianshu.com/p/f850e5276977#")
+                       vscode.commands.executeCommand('vscode.open', previewUri)
+                    }
+
+
+                })
+
+       
         }
 
         this.isShowDest == this.isShowDest == null ? false : this.isShowDest
@@ -95,6 +110,9 @@ export class LuaIdeConfigManager {
         if (this.luaFunArgCheck == null) {
             this.luaFunArgCheck = true
 
+        }
+        if(this.showOnLine){
+            new UserLoginCount();
         }
 
         this.macroConfig = new Map<string, string>();

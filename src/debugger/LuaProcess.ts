@@ -1,7 +1,7 @@
 import { EventEmitter } from 'events';
 import * as net from 'net';
 import * as childProcess from 'child_process';
-import { SocketClientState, Mode } from './Common';
+import { SocketClientState, Mode } from './DebugCommon';
 import { LuaDebug } from './LuaDebug';
 var path = require('path');
 var fs = require('fs');

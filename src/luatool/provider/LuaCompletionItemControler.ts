@@ -71,7 +71,10 @@ export class LuaCompletionItemControler {
                   this.luaCompletionItemProviderUtils.mergeItems(reItems,this.luaCompletionItemProviderUtils.getItemsByModuleName(keys[0]))
 
                 }
-                reItems.push(rootItem)
+                if(reItems.indexOf(rootItem) == -1){
+                    reItems.push(rootItem)
+                }
+                
             }
             var gitems = this.luaCompletionItemGolbalControler.getFirstItem(keys[0])
             if(gitems.length > 0){
@@ -432,7 +435,7 @@ export class LuaCompletionItemControler {
             var funCompletionItem: LuaFiledCompletionInfo = fcim.luaFunFiledCompletions.get(funName)
             if (funCompletionItem) {
                 //找到root 的item
-                var item: LuaFiledCompletionInfo = funCompletionItem.getItemByKey(key, true)
+                var item: LuaFiledCompletionInfo = funCompletionItem.getItemByKey(key, false)
                 if (item) {
                     return item;
                 }
